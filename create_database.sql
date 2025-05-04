@@ -2,7 +2,7 @@ create database if not exists board_games;
 use board_games;
 
 CREATE TABLE Users(
-   ID_User INT,
+   ID_User INT AUTO_INCREMENT,
    Username VARCHAR(50) NOT NULL,
    Password VARCHAR(50) NOT NULL,
    Role_User VARCHAR(50) NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE Users(
 );
 
 CREATE TABLE Games(
-   ID_Game INT,
+   ID_Game INT AUTO_INCREMENT,
    Description_Game VARCHAR(500) NOT NULL,
    Name_Game VARCHAR(50) NOT NULL,
    Min_players_Game INT NOT NULL,
@@ -27,26 +27,26 @@ CREATE TABLE Games(
 );
 
 CREATE TABLE Categories(
-   ID_Category INT,
+   ID_Category INT AUTO_INCREMENT,
    Category_Name VARCHAR(50) NOT NULL,
    PRIMARY KEY(ID_Category)
 );
 
 CREATE TABLE Mechanics(
-   ID_Mechanics INT,
+   ID_Mechanics INT AUTO_INCREMENT,
    Mechanic_name VARCHAR(50) NOT NULL,
    PRIMARY KEY(ID_Mechanics)
 );
 
 CREATE TABLE Creators(
-   ID_Creators INT,
+   ID_Creators INT AUTO_INCREMENT,
    Name_Creator VARCHAR(50) NOT NULL,
    Company_Creator VARCHAR(50) NOT NULL,
    PRIMARY KEY(ID_Creators)
 );
 
 CREATE TABLE click_on(
-   ID_Click INT,
+   ID_Click INT AUTO_INCREMENT,
    ID_User INT,
    ID_Game INT,
    Date_click DATETIME,
