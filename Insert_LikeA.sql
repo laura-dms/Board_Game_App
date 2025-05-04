@@ -1,3 +1,6 @@
+use board_games;
+
+
 -- INSERT like_a (75 rows)
 INSERT INTO like_a VALUES (60, 65244, '2024-08-12 18:05:58');
 INSERT INTO like_a VALUES (33, 183394, '2024-11-24 05:56:59');

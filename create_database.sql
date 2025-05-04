@@ -1,6 +1,7 @@
 create database if not exists board_games;
 use board_games;
 
+
 CREATE TABLE Users(
    ID_User INT,
    Username VARCHAR(50) NOT NULL,

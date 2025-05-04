@@ -1,3 +1,5 @@
+use board_games;
+
 -- INSERT Creators (75 rows)
 INSERT INTO Creators VALUES (1, '"Nero" Ondrej Sova', 'Hub Games');
 INSERT INTO Creators VALUES (2, '(Uncredited)', '(Public Domain)');
@@ -66,8 +68,8 @@ INSERT INTO Creators VALUES (64, 'Adam Glass', 'Lost Age Games');
 INSERT INTO Creators VALUES (65, 'Adam Godfroy', 'Mentalis Limited');
 INSERT INTO Creators VALUES (66, 'Adam Hill', 'Devir');
 INSERT INTO Creators VALUES (67, 'Adam Hogg', '(Self-Published)');
-INSERT INTO Creators VALUES (68, 'Adam Kałuża', 'Rebel Sp. z o.o.');
-INSERT INTO Creators VALUES (69, 'Adam Kwapiński', 'Awaken Realms');
+INSERT INTO Creators VALUES (68, 'Adam Kaluza', 'Rebel Sp. z o.o.');
+INSERT INTO Creators VALUES (69, 'Adam Kwapinski', 'Awaken Realms');
 INSERT INTO Creators VALUES (70, 'Adam L. Gruen', 'Fantasy Games Unlimited');
 INSERT INTO Creators VALUES (71, 'Adam Loper', 'Snarling Badger Studios');
 INSERT INTO Creators VALUES (72, 'Adam McCrimmon', 'XYZ Game Labs, Inc');

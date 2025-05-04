@@ -1,3 +1,6 @@
+use board_games;
+
+
 -- INSERT click_on (75 rows)
 INSERT INTO click_on VALUES (1, 69, 181304, '2025-04-10 09:43:32');
 INSERT INTO click_on VALUES (2, 12, 18602, '2024-10-07 20:49:31');

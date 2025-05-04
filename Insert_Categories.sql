@@ -1,3 +1,6 @@
+use board_games;
+
+
 -- INSERT Categories (75 rows)
 INSERT INTO Categories VALUES (1, 'Abstract Strategy');
 INSERT INTO Categories VALUES (2, 'Action / Dexterity');

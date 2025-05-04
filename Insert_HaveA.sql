@@ -1,3 +1,6 @@
+use board_games;
+
+
 -- INSERT have_a (75 rows)
 INSERT INTO have_a VALUES (1406, 7, 6, 8);
 INSERT INTO have_a VALUES (192291, 4, 29, 70);

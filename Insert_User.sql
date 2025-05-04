@@ -1,3 +1,5 @@
+use board_games;
+
 -- INSERT Users (75 rows)
 INSERT INTO Users VALUES (1, 'laurenrice', '!vCYqKZb6564', 'admin');
 INSERT INTO Users VALUES (2, 'johnnyowens', '&8WCymvdY7V2', 'user');

@@ -1,3 +1,6 @@
+use board_games;
+
+
 -- INSERT Mechanics (75 rows)
 INSERT INTO Mechanics VALUES (1, 'Acting');
 INSERT INTO Mechanics VALUES (2, 'Action Drafting');
