@@ -129,4 +129,7 @@ END //
 
 DELIMITER ;
 
+CALL UpdateUserPassword(75, '+d7LL4r)yeUJ', 'motdepasse');
+CALL InsertNewUser ('kevinadmin', '123456789', 'Admin');
+-- CALL InsertGame(76, 'A fast-paced card game for 2-4 players.', 'Space Explorers', 2, 4, 8.0, 30.0, 2023.0, 'https://example.com/space_explorers_thumbnail.jpg');
 
