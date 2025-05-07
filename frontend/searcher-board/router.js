@@ -14,36 +14,6 @@ const routes = [ // defining routes
     name: 'Login',
     component: Login, 
   },
-  {
-    path: '/register',
-    name: 'Register',
-    component: Register,
-  },
-  {
-    path: '/starred',
-    name: 'Starred',
-    component: UserStarred,
-  },
-  {
-    path: '/home',
-    name: 'UserHome',
-    component: Home,
-  },
-  {
-    path: '/account',
-    name: 'Account',
-    component: Account,
-  },
-  {
-    path: '/aboutus',
-    name: 'AboutUs',
-    component: AboutUs,
-  },
-  {
-    path: '/contact',
-    name: 'Contact',
-    component: Contact,
-  }
 ];
 
 const router = createRouter({
