@@ -2,10 +2,11 @@ const mysql = require('mysql2');
 
 // Create a MySQL connection pool
 const pool = mysql.createPool({
-    host: 'localhost',  // Replace with your database host
-    user: 'your_user',  // Replace with your database user
-    password: 'your_password',  // Replace with your database password
-    database: 'board_games', // Replace with your database name
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT,
     waitForConnections: true,
     connectionLimit: 10,
     queueTimeout: 0

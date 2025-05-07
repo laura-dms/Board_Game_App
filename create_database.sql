@@ -1,3 +1,4 @@
+drop database board_games;
 create database if not exists board_games;
 use board_games;
 

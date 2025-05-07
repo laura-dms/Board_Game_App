@@ -1,12 +1,12 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const mysql = require('mysql2'); // Use mysql2 for prepared statements
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+import express from 'express';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import mysql from 'mysql2';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 const app = express();
 const port = 3000;
-const crypto = require('crypto');
 const secretKey = crypto.randomBytes(64).toString('hex');
 
 app.use(cors());
