@@ -3,7 +3,7 @@
 
       <form @submit.prevent="handleSubmit" class="login-form">
         <!--username field-->
-        <h2 class="title-login">CineAccount Login</h2>
+        <h2 class="title-login">Account Login</h2>
         <div class="form-group">
           <input
             id="username"

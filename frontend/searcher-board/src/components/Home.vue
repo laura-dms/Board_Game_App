@@ -87,7 +87,7 @@ export default {
       if (this.showFavorites) {
         moviesToFilter = this.favoritesMovies;
       } else {
-        moviesToFilter = this.allGames; // Changé allMovies en allGames ici aussi
+        moviesToFilter = this.allGames; //
       }
       this.filteredMovies = moviesToFilter.filter(movie =>
         movie.title.toLowerCase().includes(query.toLowerCase())

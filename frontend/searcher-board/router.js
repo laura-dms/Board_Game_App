@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from './src/components/Home.vue';
 import Login from './src/components/Login.vue';
+
 // importing all the components that will be used in the routes
 
 const routes = [ // defining routes
