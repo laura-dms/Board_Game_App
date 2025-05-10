@@ -133,3 +133,45 @@ CALL UpdateUserPassword(75, '+d7LL4r)yeUJ', 'motdepasse');
 CALL InsertNewUser ('kevinadmin', '123456789', 'Admin');
 -- CALL InsertGame(76, 'A fast-paced card game for 2-4 players.', 'Space Explorers', 2, 4, 8.0, 30.0, 2023.0, 'https://example.com/space_explorers_thumbnail.jpg');
 
+
+DELIMITER //
+
+CREATE PROCEDURE generate_recommendations(IN user_id INT)
+BEGIN
+  START TRANSACTION;
+
+  -- delte old recommendations
+  DELETE FROM Recommendation
+  WHERE ID_User = user_id;
+
+  -- insert new recommendations
+  INSERT INTO Recommendation (ID_User, ID_Game, Recommendation_Date, Score)
+  SELECT
+    user_id AS ID_User,
+    gcmc.ID_Game,
+    NOW() AS Recommendation_Date,
+    COUNT(*) AS Score
+  FROM Game_Category_Mechanic_Creator gcmc
+  WHERE (gcmc.ID_Category, gcmc.ID_Mechanics) IN (
+    SELECT ID_Category, ID_Mechanics
+    FROM Game_Category_Mechanic_Creator
+    WHERE ID_Game IN (
+      SELECT ID_Game
+      FROM Likes
+      WHERE ID_User = user_id
+    )
+  )
+  AND gcmc.ID_Game NOT IN (
+    SELECT ID_Game
+    FROM Likes
+    WHERE ID_User = user_id
+  )
+  GROUP BY gcmc.ID_Game;
+
+  COMMIT;
+END;
+//
+
+DELIMITER ;
+
+CALL generate_recommendations(@user_id);

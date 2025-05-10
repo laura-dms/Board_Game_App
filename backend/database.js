@@ -148,6 +148,27 @@ async function initializeDatabase() {
             )
         `);
 
+                        await executeQuery(`CREATE TABLE SearchHistory (
+            ID_Search INT AUTO_INCREMENT PRIMARY KEY,
+            ID_User INT,
+            Search_Term VARCHAR(255) NOT NULL,
+            Search_Date DATETIME NOT NULL,
+            FOREIGN KEY (ID_User) REFERENCES Users(ID_User)
+        );`);
+                        
+        await executeQuery(`-- Table to store game recommendations for users
+        CREATE TABLE GameRecommendations (
+            ID_Recommendation INT AUTO_INCREMENT PRIMARY KEY,
+            ID_User INT,
+            ID_Game INT,
+            Recommendation_Date DATETIME NOT NULL,
+            Score DECIMAL(10, 5),  -- Optional:  A score indicating recommendation strength
+            FOREIGN KEY (ID_User) REFERENCES Users(ID_User),
+            FOREIGN KEY (ID_Game) REFERENCES Games(ID_Game),
+            UNIQUE (ID_User, ID_Game) --  Prevent duplicate recommendations for the same user and game
+        );
+        `);
+        
         /* Hash procedure in Users password*/
         async function insertHashedUsersIntoDatabase() {
         const userData = [

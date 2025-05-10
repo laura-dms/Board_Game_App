@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from './src/components/Home.vue';
 import Login from './src/components/Login.vue';
+import Recommandation from './src/components/Recommandation.vue';
 
 // importing all the components that will be used in the routes
 
@@ -14,6 +15,11 @@ const routes = [ // defining routes
     path: '/login',
     name: 'Login',
     component: Login, 
+  },
+  {
+    path: '/recommandation',
+    name: 'Recommandation',
+    component: Recommandation,
   },
 ];
 
