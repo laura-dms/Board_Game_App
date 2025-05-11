@@ -1,3 +1,5 @@
+use board_games;
+
 DELIMITER //
 
 CREATE PROCEDURE InsertNewUser (
@@ -140,33 +142,41 @@ CREATE PROCEDURE generate_recommendations(IN user_id INT)
 BEGIN
   START TRANSACTION;
 
-  -- delte old recommendations
-  DELETE FROM Recommendation
-  WHERE ID_User = user_id;
-
-  -- insert new recommendations
-  INSERT INTO Recommendation (ID_User, ID_Game, Recommendation_Date, Score)
+  -- insert new recommendations (matching category OR mechanic)
+  INSERT INTO gamerecommendations (ID_User, ID_Game, Recommendation_Date, Score)
   SELECT
     user_id AS ID_User,
-    gcmc.ID_Game,
+    h.ID_Game,
     NOW() AS Recommendation_Date,
     COUNT(*) AS Score
-  FROM Game_Category_Mechanic_Creator gcmc
-  WHERE (gcmc.ID_Category, gcmc.ID_Mechanics) IN (
-    SELECT ID_Category, ID_Mechanics
-    FROM Game_Category_Mechanic_Creator
-    WHERE ID_Game IN (
-      SELECT ID_Game
-      FROM Likes
-      WHERE ID_User = user_id
+  FROM have_a h
+  WHERE (
+    h.ID_Category IN (
+      SELECT ha.ID_Category
+      FROM have_a ha
+      WHERE ha.ID_Game IN (
+        SELECT la.ID_Game
+        FROM like_a la
+        WHERE la.ID_User = user_id
+      )
+    )
+    OR
+    h.ID_Mechanics IN (
+      SELECT ha.ID_Mechanics
+      FROM have_a ha
+      WHERE ha.ID_Game IN (
+        SELECT la.ID_Game
+        FROM like_a la
+        WHERE la.ID_User = user_id
+      )
     )
   )
-  AND gcmc.ID_Game NOT IN (
-    SELECT ID_Game
-    FROM Likes
-    WHERE ID_User = user_id
+  AND h.ID_Game NOT IN (
+    SELECT la.ID_Game
+    FROM like_a la
+    WHERE la.ID_User = user_id
   )
-  GROUP BY gcmc.ID_Game;
+  GROUP BY h.ID_Game;
 
   COMMIT;
 END;
@@ -174,4 +184,5 @@ END;
 
 DELIMITER ;
 
-CALL generate_recommendations(@user_id);
+
+CALL generate_recommendations(3);
