@@ -1,6 +1,14 @@
 <template>
-
+  <footer class="footer">
+    <p>&copy; 2025 Board Game App. All rights reserved.</p>
+  </footer>
 </template>
+
+<script>
+export default {
+  name: "Footer",
+};
+</script>
 
 <style scoped>
 
@@ -41,6 +49,16 @@ body {
 margin: 0;
 padding-bottom: 60px; /* pour laisser de l'espace pour le footer */
 min-height: 100vh; /* assure que la page prend toute la hauteur de la fenêtre */
+}
+
+.footer {
+  background-color: #017bff;
+  color: white;
+  text-align: center;
+  padding: 10px 0;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
 }
 
 </style>
