@@ -1,4 +1,7 @@
-const mysql = require('mysql2');
+import mysql from 'mysql2';
+import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Create a MySQL connection pool
 const pool = mysql.createPool({
@@ -28,15 +31,16 @@ function executeQuery(sql, params) {
 async function initializeDatabase() {
     try {
         // Create the database if it doesn't exist
+        await executeQuery('DROP DATABASE IF EXISTS board_games');
         await executeQuery('CREATE DATABASE IF NOT EXISTS board_games');
         await executeQuery('USE board_games');
 
         // Create the Users table
         await executeQuery(`
-            CREATE TABLE Users(
+            CREATE TABLE IF NOT EXISTS Users(
                 ID_User INT AUTO_INCREMENT,
                 Username VARCHAR(50) NOT NULL,
-                Password VARCHAR(50) NOT NULL,
+                Password VARCHAR(255) NOT NULL,
                 Role_User VARCHAR(50) NOT NULL,
                 PRIMARY KEY(ID_User),
                 UNIQUE(Username)
@@ -45,7 +49,7 @@ async function initializeDatabase() {
 
         // Create the Games table
         await executeQuery(`
-            CREATE TABLE Games(
+            CREATE TABLE IF NOT EXISTS Games(
                 ID_Game INT AUTO_INCREMENT,
                 Description_Game VARCHAR(500) NOT NULL,
                 Name_Game VARCHAR(50) NOT NULL,
@@ -64,7 +68,7 @@ async function initializeDatabase() {
 
         // Create the Categories table
         await executeQuery(`
-            CREATE TABLE Categories(
+            CREATE TABLE IF NOT EXISTS Categories(
                 ID_Category INT AUTO_INCREMENT,
                 Category_Name VARCHAR(50) NOT NULL,
                 PRIMARY KEY(ID_Category)
@@ -73,7 +77,7 @@ async function initializeDatabase() {
 
         // Create the Mechanics table
         await executeQuery(`
-            CREATE TABLE Mechanics(
+            CREATE TABLE IF NOT EXISTS Mechanics(
                 ID_Mechanics INT AUTO_INCREMENT,
                 Mechanic_name VARCHAR(50) NOT NULL,
                 PRIMARY KEY(ID_Mechanics)
@@ -82,7 +86,7 @@ async function initializeDatabase() {
 
         // Create the Creators table
         await executeQuery(`
-            CREATE TABLE Creators(
+            CREATE TABLE IF NOT EXISTS Creators(
                 ID_Creators INT AUTO_INCREMENT,
                 Name_Creator VARCHAR(50) NOT NULL,
                 Company_Creator VARCHAR(50) NOT NULL,
@@ -92,7 +96,7 @@ async function initializeDatabase() {
 
         // Create the click_on table
         await executeQuery(`
-            CREATE TABLE click_on(
+            CREATE TABLE IF NOT EXISTS click_on(
                 ID_Click INT AUTO_INCREMENT,
                 ID_User INT,
                 ID_Game INT,
@@ -105,7 +109,7 @@ async function initializeDatabase() {
 
         // Create the like_a table
         await executeQuery(`
-            CREATE TABLE like_a(
+            CREATE TABLE IF NOT EXISTS like_a(
                 ID_User INT,
                 ID_Game INT,
                 Date_like DATETIME,
@@ -117,18 +121,22 @@ async function initializeDatabase() {
 
         // Create the have_a table
         await executeQuery(`
-            CREATE TABLE have_a(
+            CREATE TABLE IF NOT EXISTS have_a(
                 ID_Game INT,
                 ID_Category INT,
-                PRIMARY KEY(ID_Game, ID_Category),
+                ID_Mechanics INT,
+                ID_Creators INT,
+                PRIMARY KEY(ID_Game, ID_Category, ID_Mechanics, ID_Creators),
                 FOREIGN KEY(ID_Game) REFERENCES Games(ID_Game),
-                FOREIGN KEY(ID_Category) REFERENCES Categories(ID_Category)
+                FOREIGN KEY(ID_Category) REFERENCES Categories(ID_Category),
+                FOREIGN KEY(ID_Mechanics) REFERENCES Mechanics(ID_Mechanics),
+                FOREIGN KEY(ID_Creators) REFERENCES Creators(ID_Creators)
             )
         `);
 
         // Create the designed_by table
         await executeQuery(`
-            CREATE TABLE designed_by(
+            CREATE TABLE IF NOT EXISTS designed_by(
                 ID_Game INT,
                 ID_Creators INT,
                 PRIMARY KEY(ID_Game, ID_Creators),
@@ -139,7 +147,7 @@ async function initializeDatabase() {
 
         // Create the uses_mechanic table
         await executeQuery(`
-            CREATE TABLE uses_mechanic(
+            CREATE TABLE IF NOT EXISTS uses_mechanic(
                 ID_Game INT,
                 ID_Mechanics INT,
                 PRIMARY KEY(ID_Game, ID_Mechanics),
@@ -148,7 +156,7 @@ async function initializeDatabase() {
             )
         `);
 
-        await executeQuery(`CREATE TABLE SearchHistory (
+        await executeQuery(`CREATE TABLE IF NOT EXISTS SearchHistory (
             ID_Search INT AUTO_INCREMENT PRIMARY KEY,
             ID_User INT,
             Search_Term VARCHAR(255) NOT NULL,
@@ -157,7 +165,7 @@ async function initializeDatabase() {
         );`);
                         
         await executeQuery(`-- Table to store game recommendations for users
-        CREATE TABLE GameRecommendations (
+        CREATE TABLE IF NOT EXISTS GameRecommendations (
             ID_Recommendation INT AUTO_INCREMENT PRIMARY KEY,
             ID_User INT,
             ID_Game INT,
@@ -268,7 +276,7 @@ async function initializeDatabase() {
         }
 
         /* Call the function to hash passwords and insert users into the database*/
-        insertHashedUsersIntoDatabase();
+        await insertHashedUsersIntoDatabase();
 
         // Insert data into the Games table
         await executeQuery(`INSERT INTO Games (ID_Game, Description_Game, Name_Game, Min_players_Game, Max_players_Game, Min_age_Game, Playing_time_Game, Year_published_Game, Thumbnail_Game) VALUES
@@ -1012,12 +1020,236 @@ async function initializeDatabase() {
             `);
 
         // Insert into click_on table for tests
-        await executeQuery(`INSERT INTO click_on VALUES (1, 69, 181304, '2025-04-10 09:43:32'),
-            (2, 12, 18602, '2024-10-07 20:49:31'),
-            (3, 14, 1927, '2025-04-09 07:42:28'),
-            (4, 32, 284083, '2024-05-08 17:15:13'),
-            (5, 60, 13, '2024-05-24 23:33:27'),
-            (6, 67, 183394, '2024-05-02 15:32:53'),`);
+        await executeQuery(`INSERT INTO click_on (ID_User, ID_Game, Date_click) VALUES 
+            (69, 181304, '2025-04-10 09:43:32'),
+            (12, 18602, '2024-10-07 20:49:31'),
+            (14, 1927, '2025-04-09 07:42:28'),
+            (32, 284083, '2024-05-08 17:15:13'),
+            (60, 13, '2024-05-24 23:33:27'),
+            (67, 183394, '2024-05-02 15:32:53'),
+            (33, 143884, '2024-10-22 05:39:13'),
+            (26, 124742, '2024-07-30 19:21:33'),
+            (13, 201808, '2024-05-05 20:49:27'),
+            (46, 320, '2024-11-01 07:51:28'),
+            (69, 120677, '2024-07-29 20:12:04'),
+            (43, 432, '2024-11-22 06:09:47'),
+            (40, 120677, '2024-06-22 05:15:52'),
+            (57, 146021, '2024-09-25 13:28:24'),
+            (65, 224517, '2024-06-18 09:44:40'),
+            (66, 70323, '2024-11-30 05:28:47'),
+            (25, 28143, '2024-05-13 17:31:31'),
+            (32, 158899, '2025-02-22 10:45:58'),
+            (66, 120677, '2025-02-03 00:04:56'),
+            (68, 18602, '2024-08-19 18:19:48'),
+            (62, 192291, '2024-10-21 20:55:34'),
+            (18, 192291, '2025-01-30 04:57:50'),
+            (13, 146021, '2024-08-17 09:32:36'),
+            (21, 10630, '2024-11-14 03:26:17'),
+            (68, 10547, '2024-08-10 15:07:26'),
+            (47, 8217, '2025-03-31 14:34:01'),
+            (15, 148228, '2024-08-14 21:16:09'),
+            (39, 157354, '2025-02-28 21:56:58'),
+            (39, 153938, '2024-05-19 20:58:38'),
+            (12, 182028, '2024-07-20 06:15:03'),
+            (68, 183394, '2025-04-24 02:52:48'),
+            (44, 122522, '2024-12-03 18:50:43'),
+            (46, 204583, '2024-05-29 05:32:49'),
+            (22, 72125, '2025-01-25 19:38:47'),
+            (8, 148228, '2024-09-03 05:07:32'),
+            (50, 39856, '2024-07-08 06:49:29'),
+            (5, 28143, '2024-12-27 05:58:04'),
+            (2, 822, '2025-02-05 23:00:11'),
+            (63, 167791, '2024-09-06 16:39:42'),
+            (44, 170216, '2024-06-27 23:44:18'),
+            (35, 2653, '2024-11-03 14:02:34'),
+            (19, 153938, '2024-10-17 21:09:49'),
+            (46, 244992, '2025-03-09 08:08:27'),
+            (3, 129622, '2024-08-31 06:23:38'),
+            (18, 192291, '2024-07-06 04:11:11'),
+            (15, 187645, '2024-05-11 01:58:32'),
+            (69, 163412, '2025-02-21 10:46:20'),
+            (45, 50381, '2025-04-15 08:54:19'),
+            (45, 96848, '2024-08-10 14:12:10'),
+            (71, 170216, '2025-01-04 05:18:09'),
+            (19, 93, '2024-07-17 04:13:43'),
+            (29, 2223, '2025-01-21 07:49:32'),
+            (24, 148949, '2024-09-22 06:21:36'),
+            (52, 131357, '2024-06-29 19:40:10'),
+            (1, 16992, '2025-04-28 01:02:02'),
+            (28, 432, '2025-04-02 07:14:51'),
+            (36, 148228, '2025-04-22 15:34:01'),
+            (9, 153938, '2025-03-06 11:40:36'),
+            (3, 108745, '2025-01-27 00:21:39'),
+            (72, 70323, '2024-07-23 07:04:50'),
+            (52, 122522, '2025-01-27 20:12:30'),
+            (54, 54043, '2024-06-26 21:01:20'),
+            (13, 192291, '2024-09-03 02:56:50'),
+            (19, 96848, '2024-06-29 10:03:10'),
+            (54, 266192, '2024-09-01 17:52:15'),
+            (35, 65244, '2024-07-13 22:07:03'),
+            (42, 35677, '2025-04-20 10:54:23'),
+            (54, 176494, '2025-03-25 00:26:46'),
+            (49, 169786, '2024-10-21 21:41:18'),
+            (13, 237182, '2024-09-08 20:53:26'),
+            (36, 320, '2024-05-29 18:06:51'),
+            (12, 40834, '2025-01-19 22:41:30'),
+            (7, 9209, '2025-04-03 15:36:20'),
+            (12, 154203, '2025-01-08 19:51:51'),
+            (44, 31481, '2024-08-15 01:55:02');`);
+
+        // Insert into like_a table for tests
+        await executeQuery(`INSERT INTO like_a VALUES (60, 65244, '2024-08-12 18:05:58'),
+            (33, 183394, '2024-11-24 05:56:59'),
+            (26, 167791, '2025-01-04 05:15:21'),
+            (31, 187645, '2024-05-20 08:38:42'),
+            (23, 3955, '2024-05-04 03:06:18'),
+            (28, 181, '2024-12-13 22:34:10'),
+            (53, 167791, '2024-05-13 16:28:54'),
+            (46, 2653, '2024-11-27 14:31:46'),
+            (39, 72125, '2024-06-06 12:57:46'),
+            (57, 31260, '2025-04-16 06:08:30'),
+            (12, 121921, '2024-07-29 02:25:35'),
+            (32, 34635, '2024-05-20 00:33:49'),
+            (38, 84876, '2024-07-04 18:12:21'),
+            (38, 157969, '2024-11-21 12:53:54'),
+            (34, 124742, '2024-09-18 15:52:43'),
+            (51, 121921, '2025-03-27 10:19:51'),
+            (18, 96848, '2024-11-20 15:11:23'),
+            (25, 54043, '2024-12-03 01:27:48'),
+            (6, 192291, '2025-03-05 22:58:03'),
+            (18, 201808, '2024-06-21 17:43:35'),
+            (60, 150376, '2024-11-16 04:23:18'),
+            (46, 28143, '2025-01-30 16:18:29'),
+            (51, 320, '2025-03-27 08:38:09'),
+            (46, 158899, '2024-12-21 21:56:42'),
+            (73, 122522, '2024-09-25 19:13:51'),
+            (45, 172225, '2024-12-16 03:22:30'),
+            (5, 98778, '2024-07-06 08:27:51'),
+            (28, 12333, '2024-09-24 03:02:55'),
+            (34, 18602, '2024-08-05 06:37:26'),
+            (62, 31481, '2025-04-11 15:01:15'),
+            (27, 40834, '2025-02-26 01:10:43'),
+            (37, 163412, '2024-12-26 17:52:07'),
+            (33, 39463, '2025-01-25 19:23:08'),
+            (73, 9209, '2025-01-28 09:56:14'),
+            (38, 201808, '2025-02-19 06:42:02'),
+            (63, 108745, '2024-11-07 02:19:23'),
+            (68, 157354, '2024-11-10 03:48:43'),
+            (7, 35677, '2025-02-16 08:39:36'),
+            (40, 3076, '2025-03-18 11:21:52'),
+            (69, 224517, '2024-08-14 15:23:14'),
+            (40, 2653, '2024-05-12 05:42:51'),
+            (25, 148949, '2024-07-14 16:44:38'),
+            (24, 172225, '2024-05-09 15:36:50'),
+            (30, 171, '2025-04-03 09:43:05'),
+            (63, 161936, '2025-03-28 05:05:07'),
+            (47, 9220, '2025-01-29 05:28:27'),
+            (28, 129622, '2025-01-19 23:54:21'),
+            (6, 157969, '2024-12-10 08:55:49'),
+            (21, 205059, '2024-12-04 09:31:28'),
+            (42, 72125, '2024-12-14 14:57:32'),
+            (66, 2453, '2024-09-15 01:26:25'),
+            (53, 822, '2024-05-16 18:31:55'),
+            (47, 244992, '2024-12-30 18:05:17'),
+            (63, 178900, '2024-07-28 14:51:48'),
+            (5, 146508, '2024-07-25 21:40:00'),
+            (62, 170216, '2025-03-09 18:04:37'),
+            (55, 108745, '2024-08-27 13:13:54'),
+            (26, 161936, '2025-03-22 15:02:13'),
+            (3, 123540, '2025-01-10 18:58:11'),
+            (61, 183394, '2024-06-14 00:27:49'),
+            (47, 2651, '2024-07-04 10:47:38'),
+            (37, 244521, '2025-01-08 20:36:40'),
+            (41, 230802, '2024-09-05 22:43:34'),
+            (75, 11, '2024-11-13 15:45:00'),
+            (9, 192291, '2025-04-18 04:44:52'),
+            (19, 187645, '2024-07-17 15:01:30'),
+            (15, 181, '2024-05-30 02:44:54'),
+            (63, 157354, '2024-10-13 11:31:39'),
+            (50, 103885, '2024-10-22 21:22:17'),
+            (75, 126163, '2025-03-28 11:51:19'),
+            (50, 14996, '2025-03-01 09:27:56'),
+            (20, 31481, '2024-10-30 14:54:14'),
+            (35, 132531, '2024-09-23 03:35:33'),
+            (25, 167791, '2024-05-10 05:46:25'),
+            (15, 178900, '2025-04-02 22:14:01');`);
+
+        // Insert into have_a table for tests
+        await executeQuery(`INSERT INTO have_a VALUES (1406, 7, 6, 8),
+            (192291, 4, 29, 70),
+            (37111, 16, 26, 65),
+            (154203, 18, 68, 75),
+            (230802, 65, 58, 65),
+            (237182, 59, 55, 25),
+            (204583, 15, 14, 61),
+            (2655, 66, 15, 14),
+            (98778, 57, 26, 56),
+            (148228, 54, 30, 52),
+            (18, 20, 33, 35),
+            (96848, 6, 68, 56),
+            (31481, 55, 65, 65),
+            (230802, 9, 57, 61),
+            (110327, 27, 13, 43),
+            (178900, 70, 64, 24),
+            (173346, 19, 26, 3),
+            (153938, 1, 71, 29),
+            (42, 28, 59, 30),
+            (244992, 15, 45, 68),
+            (11, 3, 68, 45),
+            (122522, 74, 27, 45),
+            (31260, 73, 17, 17),
+            (237182, 5, 63, 57),
+            (284083, 34, 4, 24),
+            (170216, 19, 9, 53),
+            (201808, 7, 39, 67),
+            (244992, 39, 2, 24),
+            (40692, 20, 58, 67),
+            (93, 11, 57, 14),
+            (28143, 58, 37, 47),
+            (102794, 70, 69, 7),
+            (50, 8, 20, 14),
+            (30549, 51, 16, 13),
+            (36218, 13, 48, 16),
+            (96848, 3, 46, 2),
+            (432, 23, 22, 49),
+            (162886, 71, 16, 64),
+            (37111, 36, 24, 67),
+            (244992, 69, 42, 26),
+            (11, 13, 42, 27),
+            (123540, 50, 16, 20),
+            (133473, 28, 75, 47),
+            (463, 70, 54, 39),
+            (147949, 65, 73, 66),
+            (37111, 17, 32, 21),
+            (124742, 68, 49, 67),
+            (194655, 9, 12, 45),
+            (146021, 22, 20, 52),
+            (2653, 15, 30, 7),
+            (157969, 64, 55, 21),
+            (18602, 57, 53, 49),
+            (161936, 12, 10, 43),
+            (174430, 52, 55, 75),
+            (2651, 20, 34, 48),
+            (123260, 49, 53, 4),
+            (157969, 1, 50, 14),
+            (2653, 2, 64, 59),
+            (237182, 19, 38, 30),
+            (108745, 75, 1, 21),
+            (98778, 46, 14, 17),
+            (37111, 75, 62, 9),
+            (36218, 10, 62, 34),
+            (2655, 38, 28, 33),
+            (822, 65, 63, 44),
+            (15987, 69, 6, 47),
+            (41114, 64, 73, 51),
+            (432, 32, 69, 36),
+            (153938, 34, 19, 22),
+            (154203, 4, 39, 9),
+            (31260, 3, 71, 41),
+            (161936, 55, 13, 17),
+            (266192, 53, 23, 75),
+            (194655, 16, 66, 50),
+            (124742, 73, 71, 56);`);
 
         console.log('Database initialized successfully!');
     } catch (error) {
@@ -1027,4 +1259,4 @@ async function initializeDatabase() {
     }
 }
 initializeDatabase();
-module.exports = pool;
+export default pool;
