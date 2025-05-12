@@ -1,7 +1,14 @@
 import mysql from 'mysql2';
+<<<<<<< Updated upstream
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 dotenv.config();
+=======
+import dotenv from 'dotenv';
+dotenv.config();
+
+// const mysql = require('mysql2');
+>>>>>>> Stashed changes
 
 // Create a MySQL connection pool
 const pool = mysql.createPool({
@@ -1259,4 +1266,8 @@ async function initializeDatabase() {
     }
 }
 initializeDatabase();
+<<<<<<< Updated upstream
+=======
+//module.exports = pool;
+>>>>>>> Stashed changes
 export default pool;
