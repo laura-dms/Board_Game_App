@@ -84,7 +84,7 @@ BEGIN
         END IF;
     ELSE
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Only users with Editor or ADmin role can insert games.';
+        SET MESSAGE_TEXT = 'Only users with Editor or Admin role can insert games.';
     END IF;
 END //
 
@@ -143,6 +143,7 @@ BEGIN
   START TRANSACTION;
 
   -- insert new recommendations (matching category OR mechanic)
+  -- It identifies games that share at least one category or mechanic with the user's liked games
   INSERT INTO gamerecommendations (ID_User, ID_Game, Recommendation_Date, Score)
   SELECT
     user_id AS ID_User,

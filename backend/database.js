@@ -148,7 +148,7 @@ async function initializeDatabase() {
             )
         `);
 
-                        await executeQuery(`CREATE TABLE SearchHistory (
+        await executeQuery(`CREATE TABLE SearchHistory (
             ID_Search INT AUTO_INCREMENT PRIMARY KEY,
             ID_User INT,
             Search_Term VARCHAR(255) NOT NULL,
