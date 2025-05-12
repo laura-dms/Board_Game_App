@@ -5,7 +5,7 @@ use board_games;
 CREATE TABLE Users(
    ID_User INT AUTO_INCREMENT,
    Username VARCHAR(50) NOT NULL,
-   Password VARCHAR(50) NOT NULL,
+   Password VARCHAR(255) NOT NULL,
    Role_User VARCHAR(50) NOT NULL,
    PRIMARY KEY(ID_User),
    UNIQUE(Username)

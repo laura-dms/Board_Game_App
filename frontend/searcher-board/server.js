@@ -1,13 +1,19 @@
-import express from 'express';  
-import cors from 'cors';
-import db from './db/db.js';
+import { createRouter, createWebHistory } from 'vue-router';
+import Home from './components/Home.vue';
+import Login from './components/Login.vue';
+import Register from './components/Register.vue';
+import FindGame from './components/FindGame.vue';
 
-const app = express(); // create express app, used for accessing the database
-const port = 3000;
+const routes = [
+  { path: '/', name: 'Home', component: Home },
+  { path: '/login', name: 'Login', component: Login },
+  { path: '/register', name: 'Register', component: Register },
+  { path: '/find-game', name: 'FindGame', component: FindGame },
+];
 
-// using cors to allow request from vue app
-app.use(cors());
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+});
 
-// parse request as JSON
-app.use(express.json());
-
+export default router;

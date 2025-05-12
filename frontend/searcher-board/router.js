@@ -1,26 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from './src/components/Home.vue';
 import Login from './src/components/Login.vue';
-import Recommandation from './src/components/Recommandation.vue';
+import Register from './src/components/Register.vue';
+import FindGame from './src/components/FindGame.vue';
 
-// importing all the components that will be used in the routes
-
-const routes = [ // defining routes
-  {
-    path: '/', // base url
-    name: 'Home',
-    component: Home,
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: Login, 
-  },
-  {
-    path: '/recommandation',
-    name: 'Recommandation',
-    component: Recommandation,
-  },
+const routes = [
+  { path: '/', name: 'Home', component: Home },
+  { path: '/login', name: 'Login', component: Login },
+  { path: '/register', name: 'Register', component: Register },
+  { path: '/find-game', name: 'FindGame', component: FindGame },
 ];
 
 const router = createRouter({
