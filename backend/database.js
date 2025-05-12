@@ -1727,6 +1727,14 @@ async function initializeDatabase() {
 
             DELIMITER ;`);
 
+        // Create transaction
+        await executeQuery(`START TRANSACTION;
+            -- Insert into Users table
+            INSERT INTO Users (Username, Password, Role_User) VALUES ('admin', 'admin', 'Admin');
+            INSERT INTO Users (Username, Password, Role_User) VALUES ('player1', 'password1', 'Player');
+            INSERT INTO Users (Username, Password, Role_User) VALUES ('editor1', 'password2', 'Editor');
+            COMMIT;`);
+
 
         console.log('Database initialized successfully!');
     } catch (error) {
