@@ -12,7 +12,7 @@ CREATE TRIGGER TR_Users_BeforeInsert
 BEFORE INSERT ON Users
 FOR EACH ROW
 BEGIN
-    IF NEW.Role_User NOT IN ('Admin', 'Player', 'Editor') THEN
+    IF NEW.Role_User NOT IN ('Admin', 'User', 'Editor') THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid user role';
     END IF;
     SET NEW.Password = SHA2(NEW.Password, 256);
