@@ -159,6 +159,39 @@ async function fetchGames() {
   }
 }
 
+//Fetch Games clicked by user
+async function fetchGames(userId) { //  Added userId parameter
+  try {
+    // API endpoint to fetch clicked games for a specific user
+    const response = await axios.get(`http://localhost:3001/api/user/${userId}/games/clicked`);
+    console.log("Fetched clicked games:", response.data);
+
+    this.allGames = response.data.map((game) => ({
+      id: game.ID_Game || null,  
+      title: game.title || "No Title",
+      poster: game.poster || "https://placehold.co/200x300?text=No+Image",
+      description: game.description || "No Description Available",
+    }));
+    console.log("Processed clicked games:", this.allGames);
+    this.filteredGames = this.allGames;
+  } catch (error) {
+    console.error("Error fetching clicked games:", error);
+  }
+}
+
+// Get Games Endpoint
+app.get('/api/user/:userId/games/clicked', async (req, res) => {
+  const {userId} = req.body;
+  try {
+const [games_clicked] = await pool.query('SELECT * FROM click_on c JOIN Games g ON (c.ID_Game=g.ID_Game an g.ID_User=?) WHERE c.ID_User = ?, [userId]');
+  res.json(games);
+  } catch (error) {
+    console.error("Error fetching games:", error);
+    res.status(500).json({ message: "Error fetching games" });
+  }
+});
+
+
 // Launch the Server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
