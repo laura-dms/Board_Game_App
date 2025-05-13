@@ -39,17 +39,18 @@
 </template>
 
 <script setup>
-import GameBox from './GameBox.vue'
+import GameBox from './Gamebox.vue'
 import { ref } from 'vue'
 
 const criteria = ref([
   { id: 1, label: 'Theme', value: '', options: ['Fantasy', 'Sci-Fi', 'Mystery'] },
   { id: 2, label: 'Nb players', value: '', options: ['1', '2', '3+', '4+'] },
   { id: 3, label: 'Category', value: '', options: ['Strategy', 'Party', 'Family'] },
-  { id: 4, label: 'Playtime', value: '', options: ['<30min', '30-60min', '>60min'] }
+  { id: 4, label: 'Playtime', value: '', options: ['<30min', '30-60min', '>60min'] },
+  { id: 5, label: 'Play Age', value: '', options: ['>10', '>18', '<18'] },
 ])
 
-const moveUp = (index) => {
+const moveUp = (index) => { 
   if (index > 0) {
     const temp = criteria.value[index]
     criteria.value[index] = criteria.value[index - 1]

@@ -38,4 +38,3 @@ START TRANSACTION;
 --  Example:  Update a table of pre-calculated game recommendations
 UPDATE GameRecommendations SET RecommendedGames = '101,202,303' WHERE ID_User = user_id;
 COMMIT;
-

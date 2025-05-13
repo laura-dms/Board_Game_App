@@ -3,7 +3,14 @@
     <div class="game-box">
       <div class="game">
         <img :src="poster" alt="Game Poster" class="poster" :class="{ 'active-border': isFavorite }" />
-        <div class="popup-star" :class="{ 'active-star': star === '⭐' }">{{ star }}</div>
+        <div
+  class="popup-star"
+  :class="{ 'active-star': star === '⭐' }"
+  @click="handleLike"
+>
+  {{ star }}
+</div>
+
         <p :class="['game-title', isLongTitle ? 'multi-line' : 'single-line']">{{ title }}</p>
         <p class="game-description">{{ description }}</p>
       </div>

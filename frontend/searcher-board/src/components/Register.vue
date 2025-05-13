@@ -1,4 +1,5 @@
 <template>
+  <div>
   <div class="register-page">
     <form @submit.prevent="handleRegister" class="register-form">
       <h2 class="title-register">Register</h2>
@@ -23,6 +24,7 @@
         <button type="submit" class="register-button">Register</button>
       </div>
     </form>
+  </div>
   </div>
 </template>
 
