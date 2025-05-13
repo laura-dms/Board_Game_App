@@ -1491,7 +1491,7 @@ async function initializeDatabase() {
             BEFORE INSERT ON Users
             FOR EACH ROW
             BEGIN
-                IF NEW.Role_User NOT IN ('Admin', 'Player', 'Editor') THEN
+                IF NEW.Role_User NOT IN ('Admin', 'User', 'Editor') THEN
                     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid user role';
                 END IF;
                 SET NEW.Password = SHA2(NEW.Password, 256);
@@ -1581,7 +1581,7 @@ async function initializeDatabase() {
                 DECLARE user_count INT;
 
                 -- check if role is valid
-                IF p_RoleUser NOT IN ('Admin', 'Player', 'Editor') THEN
+                IF p_RoleUser NOT IN ('Admin', 'User', 'Editor') THEN
                     SIGNAL SQLSTATE '45000'
                     SET MESSAGE_TEXT = 'Invalid user role.';
                 ELSE
