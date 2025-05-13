@@ -60,12 +60,18 @@ export default {
 
         if (response.data.success) {
           console.log("Login successful:", response.data); // Log success response
-          localStorage.setItem("user", JSON.stringify(response.data.username));
+
+          // --- CORRECTED LINE ---
+          // Store an object containing username and token, stringified
+          localStorage.setItem("user", JSON.stringify({
+            username: response.data.username,
+            token: response.data.token // Assuming your backend provides a token
+          }));
+          // --- END CORRECTED LINE ---
+
           alert("Login successful! Redirecting to Find Game...");
           this.errorMessage = "";
-          setTimeout(() => {
-            this.$router.push("/gamepage"); // To match your router.js
-          }, 2000);
+          this.$router.push("/find-game"); // To match your router.js
         } else {
           console.log("Login failed:", response.data.message); // Log failure response
           this.errorMessage = "Login failed: " + response.data.message;
@@ -73,7 +79,12 @@ export default {
         }
       } catch (error) {
         console.error("Error during login:", error); // Log error
-        this.errorMessage = "An error occurred during login. Please try again.";
+        // Check if the error has a response and data for more specific messages
+        if (error.response && error.response.data && error.response.data.message) {
+             this.errorMessage = "Login failed: " + error.response.data.message;
+        } else {
+             this.errorMessage = "An error occurred during login. Please try again.";
+        }
         this.successMessage = "";
       }
     },

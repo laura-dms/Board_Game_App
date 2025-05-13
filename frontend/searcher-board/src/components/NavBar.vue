@@ -4,6 +4,7 @@
       <li><router-link to="/">Home</router-link></li>
       <li v-if="!isUserLoggedIn"><router-link to="/login">Login</router-link></li>
       <li v-if="!isUserLoggedIn"><router-link to="/register">Register</router-link></li>
+            <li v-if="!isUserLoggedIn"><router-link to="/GameRecommendationForm">Form</router-link></li>
       <li v-if="isUserLoggedIn"><router-link to="/find-game">Find Game</router-link></li>
       <li v-if="isUserLoggedIn" @click="logout"><a href="#">Logout</a></li>
     </ul>
@@ -13,11 +14,14 @@
 <script>
 export default {
   name: "Navbar",
-  computed: {
-    isUserLoggedIn() {
-      return !!localStorage.getItem("user");
-    },
-  },
+computed: {
+  isUserLoggedIn() {
+    // on ajoute this.$route comme dépendance implicite
+    this.$route;
+    return !!localStorage.getItem("user");
+  }
+},
+
   methods: {
     logout() {
       localStorage.removeItem("user");

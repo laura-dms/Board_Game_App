@@ -50,7 +50,7 @@ const criteria = ref([
   { id: 5, label: 'Play Age', value: '', options: ['>10', '>18', '<18'] },
 ])
 
-const moveUp = (index) => {
+const moveUp = (index) => { 
   if (index > 0) {
     const temp = criteria.value[index]
     criteria.value[index] = criteria.value[index - 1]
