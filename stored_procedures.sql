@@ -136,23 +136,56 @@ CALL InsertNewUser ('kevinadmin', '123456789', 'Admin');
 -- CALL InsertGame(76, 'A fast-paced card game for 2-4 players.', 'Space Explorers', 2, 4, 8.0, 30.0, 2023.0, 'https://example.com/space_explorers_thumbnail.jpg');
 
 
+
+CREATE OR REPLACE VIEW view_candidate_recommendations AS
+SELECT
+  ha.ID_Game,
+  ha.ID_Category,
+  ha.ID_Mechanics
+FROM have_a ha
+WHERE (
+  ha.ID_Category IN (
+    SELECT ha2.ID_Category
+    FROM have_a ha2
+    JOIN like_a la2 ON ha2.ID_Game = la2.ID_Game
+  )
+  OR
+  ha.ID_Mechanics IN (
+    SELECT ha2.ID_Mechanics
+    FROM have_a ha2
+    JOIN like_a la2 ON ha2.ID_Game = la2.ID_Game
+  )
+)
+AND ha.ID_Game NOT IN (
+  SELECT la3.ID_Game
+  FROM like_a la3
+);
+
+
+
 DELIMITER //
 
 CREATE PROCEDURE generate_recommendations(IN user_id INT)
 BEGIN
   START TRANSACTION;
 
-  -- insert new recommendations (matching category OR mechanic)
-  -- It identifies games that share at least one category or mechanic with the user's liked games
+  -- Supprimer les anciennes recommandations pour cet utilisateur
+  DELETE FROM gamerecommendations
+  WHERE ID_User = user_id;
+
+  -- Insérer les nouvelles recommandations
   INSERT INTO gamerecommendations (ID_User, ID_Game, Recommendation_Date, Score)
   SELECT
     user_id AS ID_User,
-    h.ID_Game,
+    vcr.ID_Game,
     NOW() AS Recommendation_Date,
     COUNT(*) AS Score
-  FROM have_a h
-  WHERE (
-    h.ID_Category IN (
+  FROM view_candidate_recommendations vcr
+  WHERE vcr.ID_Game NOT IN (
+    SELECT ID_Game FROM like_a WHERE ID_User = user_id
+  )
+  AND (
+    vcr.ID_Category IN (
       SELECT ha.ID_Category
       FROM have_a ha
       WHERE ha.ID_Game IN (
@@ -162,7 +195,7 @@ BEGIN
       )
     )
     OR
-    h.ID_Mechanics IN (
+    vcr.ID_Mechanics IN (
       SELECT ha.ID_Mechanics
       FROM have_a ha
       WHERE ha.ID_Game IN (
@@ -172,18 +205,16 @@ BEGIN
       )
     )
   )
-  AND h.ID_Game NOT IN (
-    SELECT la.ID_Game
-    FROM like_a la
-    WHERE la.ID_User = user_id
-  )
-  GROUP BY h.ID_Game;
+  GROUP BY vcr.ID_Game;
 
   COMMIT;
 END;
+
 //
 
 DELIMITER ;
+
+
 
 
 CALL generate_recommendations(3);
