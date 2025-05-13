@@ -1251,6 +1251,491 @@ async function initializeDatabase() {
             (194655, 16, 66, 50),
             (124742, 73, 71, 56);`);
 
+        // Insert views
+        await executeQuery(`-- View: GameSummaryView
+            CREATE VIEW GameSummaryView AS
+            SELECT 
+                ID_Game AS GameID,
+                Name_Game AS GameName,
+                Description_Game AS Description,
+                CONCAT(Min_players_Game, '-', Max_players_Game) AS PlayerRange,
+                Min_age_Game AS MinAge,
+                Playing_time_Game AS PlayingTime,
+                Year_published_Game AS YearPublished,
+                Thumbnail_Game AS Thumbnail
+            FROM Games
+            ORDER BY YearPublished DESC;
+
+            -- View: FamilyFriendlyGamesView
+            CREATE VIEW FamilyFriendlyGamesView AS
+            SELECT 
+                ID_Game AS GameID,
+                Name_Game AS GameName,
+                Description_Game AS Description,
+                Min_age_Game AS MinAge,
+                CONCAT(Min_players_Game, '-', Max_players_Game) AS PlayerRange,
+                Playing_time_Game AS PlayingTime,
+                Thumbnail_Game AS Thumbnail
+            FROM Games
+            WHERE Min_age_Game <= 10
+            ORDER BY MinAge ASC, PlayingTime ASC;
+
+            -- View: GamesByYearView
+            CREATE VIEW GamesByYearView AS
+            SELECT 
+                Year_published_Game AS YearPublished,
+                COUNT(*) AS TotalGames
+            FROM Games
+            GROUP BY Year_published_Game
+            ORDER BY YearPublished DESC;
+
+            -- View: GamesWithCategoriesView
+            CREATE VIEW GamesWithCategoriesView AS
+            SELECT 
+                g.ID_Game AS GameID,
+                g.Name_Game AS GameName,
+                c.Category_Name AS Category
+            FROM Games g
+            JOIN have_a ha ON g.ID_Game = ha.ID_Game
+            JOIN Categories c ON ha.ID_Category = c.ID_Category
+            ORDER BY GameName ASC, Category ASC;
+
+            -- View: GamesWithMechanicsView
+            CREATE VIEW GamesWithMechanicsView AS
+            SELECT 
+                g.ID_Game AS GameID,
+                g.Name_Game AS GameName,
+                m.Mechanic_name AS Mechanic
+            FROM Games g
+            JOIN have_a ha ON g.ID_Game = ha.ID_Game
+            JOIN Mechanics m ON ha.ID_Mechanics = m.ID_Mechanics
+            ORDER BY GameName ASC, Mechanic ASC;
+
+            -- View: LongPlayingGamesView
+            CREATE VIEW LongPlayingGamesView AS
+            SELECT 
+                ID_Game AS GameID,
+                Name_Game AS GameName,
+                Playing_time_Game AS PlayingTime,
+                Year_published_Game AS YearPublished,
+                Thumbnail_Game AS Thumbnail
+            FROM Games
+            WHERE Playing_time_Game > 120
+            ORDER BY PlayingTime DESC;
+
+            -- View: GamesPublishedBefore2000View
+            CREATE VIEW GamesPublishedBefore2000View AS
+            SELECT 
+                ID_Game AS GameID,
+                Name_Game AS GameName,
+                Year_published_Game AS YearPublished,
+                Min_players_Game AS MinPlayers,
+                Max_players_Game AS MaxPlayers,
+                Thumbnail_Game AS Thumbnail
+            FROM Games
+            WHERE Year_published_Game < 2000
+            ORDER BY YearPublished ASC;
+
+            -- View: GamesWithThumbnailView
+            CREATE VIEW GamesWithThumbnailView AS
+            SELECT 
+                ID_Game AS GameID,
+                Name_Game AS GameName,
+                Thumbnail_Game AS Thumbnail
+            FROM Games
+            WHERE Thumbnail_Game IS NOT NULL AND Thumbnail_Game != ''
+            ORDER BY GameName ASC;
+
+            -- View: GamesByPlayerCountView
+            CREATE VIEW GamesByPlayerCountView AS
+            SELECT 
+                CONCAT(Min_players_Game, '-', Max_players_Game) AS PlayerRange,
+                COUNT(*) AS TotalGames
+            FROM Games
+            GROUP BY Min_players_Game, Max_players_Game
+            ORDER BY TotalGames DESC;
+
+            -- Find Games not already liked by User
+            CREATE VIEW UserGameRecommendationsView AS
+            SELECT
+                u.ID_User AS UserID,
+                g.ID_Game AS GameID,
+                g.Name_Game AS GameName,
+                g.Description_Game as GameDescription
+            FROM Users u
+            CROSS JOIN Games g  -- Start with all possible game combinations
+            LEFT JOIN like_a l ON u.ID_User = l.ID_User AND g.ID_Game = l.ID_Game
+            WHERE l.ID_Game IS NULL  -- Exclude already liked games
+            ORDER BY g.Name_Game
+            LIMIT 10; -- Limit API's calls to 10 recommendations display
+
+            -- Complex recommendation :
+
+            START TRANSACTION;
+
+            -- Get the categories and mechanics of games the user has liked
+            CREATE TEMPORARY TABLE UserLikedGameAttributes AS
+            SELECT
+                ha.ID_Category,
+                ha.ID_Mechanics
+            FROM have_a ha
+            JOIN like_a l ON ha.ID_Game = l.ID_Game
+            WHERE l.ID_User = user_id;
+
+            -- Content-Based Filtering:
+            -- Recommend games that share categories or mechanics with the user's liked games
+            SELECT * FROM Games g JOIN have_a ha ON g.ID_Game = ha.ID_Game
+            JOIN UserLikedGameAttributes ula ON ha.ID_Category = ula.ID_Category OR ha.ID_Mechanics = ula.ID_Mechanics
+            WHERE g.ID_Game NOT IN (SELECT ID_Game FROM like_a WHERE ID_User = user_id)  -- Exclude already liked games
+            ORDER BY g.Name_Game;
+
+            DROP TEMPORARY TABLE IF EXISTS UserLikedGameAttributes;
+            COMMIT;
+
+            -- Collaborative Filtering (User-Based)
+            START TRANSACTION;
+
+            -- Find similar users (simplified: users who liked at least one of the same games)
+            CREATE TEMPORARY TABLE SimilarUsers AS
+            SELECT
+                l2.ID_User AS SimilarUserID
+            FROM like_a l1
+            JOIN like_a l2 ON l1.ID_Game = l2.ID_Game AND l1.ID_User != l2.ID_User
+            WHERE l1.ID_User = user_id
+            GROUP BY l2.ID_User;
+
+            -- Recommend games liked by similar users but not by the current user
+            SELECT * FROM Games g
+            JOIN like_a l ON g.ID_Game = l.ID_Game
+            JOIN SimilarUsers su ON l.ID_User = su.SimilarUserID
+            WHERE g.ID_Game NOT IN (SELECT ID_Game FROM like_a WHERE ID_User = user_id)
+            GROUP BY g.ID_Game
+            ORDER BY COUNT(*) DESC, g.Name_Game ASC;  -- Order by popularity among similar users
+
+            DROP TEMPORARY TABLE IF EXISTS SimilarUsers;`);
+
+        // Create indexes for performance
+        await executeQuery(`
+            CREATE INDEX idx_user_game          ON click_on (ID_User, ID_Game);
+            CREATE INDEX idx_like_a             ON like_a (ID_User, ID_Game);
+            CREATE INDEX idx_have_a             ON have_a (ID_Game, ID_Category, ID_Mechanics);
+            CREATE INDEX idx_games              ON Games (ID_Game, Name_Game);
+            CREATE INDEX idx_Games_Name		    ON Games(Name_Game);
+
+            CREATE INDEX idx_Games_Year		    ON Games(Year_published_Game);
+            CREATE INDEX idx_Games_Time		    ON Games(Playing_time_Game);
+            CREATE INDEX idx_Games_MinAge	    ON Games(Min_age_Game);
+            CREATE INDEX idx_Games_MinPlayers	ON Games(Min_players_Game);
+            CREATE INDEX idx_Games_MaxPlayers	ON Games(Max_players_Game);
+
+            CREATE INDEX idx_Cat_Name		    ON Categories(Category_Name);
+            CREATE INDEX idx_Mech_Name		    ON Mechanics(Mechanic_name);
+
+            CREATE INDEX idx_havea_Game		    ON have_a(ID_Game);
+            CREATE INDEX idx_havea_Category	    ON have_a(ID_Category);
+            CREATE INDEX idx_havea_Mechanics	ON have_a(ID_Mechanics);`);
+
+        // Create triggers for data integrity
+        await executeQuery(`
+            delimiter $$
+            CREATE TRIGGER trg_click_on
+            BEFORE INSERT ON click_on
+            FOR EACH ROW
+            BEGIN
+                DECLARE v_count INT;
+                SELECT COUNT(*) INTO v_count FROM Users WHERE ID_User = NEW.ID_User;
+                IF v_count = 0 THEN
+                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'User does not exist';
+                END IF;
+            END $$
+            delimiter ;
+
+            delimiter $$
+            CREATE TRIGGER trg_like_a
+            BEFORE INSERT ON like_a
+            FOR EACH ROW
+            BEGIN
+                DECLARE v_count INT;
+                SELECT COUNT(*) INTO v_count FROM Users WHERE ID_User = NEW.ID_User;
+                IF v_count = 0 THEN
+                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'User does not exist';
+                END IF;
+            END $$
+            delimiter ;
+            
+            delimiter $$
+            CREATE TRIGGER TR_Users_BeforeInsert
+            BEFORE INSERT ON Users
+            FOR EACH ROW
+            BEGIN
+                IF NEW.Role_User NOT IN ('Admin', 'Player', 'Editor') THEN
+                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid user role';
+                END IF;
+                SET NEW.Password = SHA2(NEW.Password, 256);
+            END; $$
+            delimiter 
+            
+            delimiter $$
+            CREATE TRIGGER TR_Users_BeforeUpdate
+            BEFORE UPDATE ON Users
+            FOR EACH ROW
+            BEGIN
+                IF NEW.Role_User != OLD.Role_User THEN
+                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Role changes are not allowed.';
+                END IF;
+                IF NEW.Password != OLD.Password THEN
+                    SET NEW.Password = SHA2(NEW.Password, 256);
+                END IF;
+            END $$
+            delimiter ;
+            
+            delimiter $$
+            CREATE TRIGGER TR_click_on_BeforeInsert 
+            BEFORE INSERT ON click_on
+            FOR EACH ROW
+            BEGIN
+                IF NEW.Date_click IS NULL THEN
+                    SET NEW.Date_click = NOW();
+                END IF;
+                SELECT COUNT(*) INTO @click_count
+                FROM click_on
+                WHERE ID_User = NEW.ID_User AND ID_Game = NEW.ID_Game
+                AND Date_click > NOW() - INTERVAL 10 SECOND;
+                IF @click_count > 0 THEN
+                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Too many clicks on the same game in a short period.';
+                END IF;
+            END $$
+            delimiter ;
+            
+            delimiter $$
+            CREATE TRIGGER cap_games_liked
+            BEFORE INSERT ON like_a
+            FOR EACH ROW
+            BEGIN
+                DECLARE liked_count INT;
+                SELECT COUNT(*) INTO liked_count
+                FROM like_a
+                WHERE ID_User = NEW.ID_User;
+                IF liked_count >= 50 THEN
+                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Maximum number of liked games (50) reached.';
+                END IF;
+            END $$
+            delimiter ;
+            
+            CREATE TABLE users_changes_log (
+                log_id INT AUTO_INCREMENT PRIMARY KEY,
+                ID_User INT,
+                old_username VARCHAR(50),
+                new_username VARCHAR(50),
+                old_password VARCHAR(255),  -- Store hashed password
+                new_password VARCHAR(255),  -- Store hashed password
+                change_timestamp DATETIME
+            );
+
+            delimiter $$
+            CREATE TRIGGER users_results_changes
+            AFTER UPDATE ON Users
+            FOR EACH ROW
+            BEGIN
+                IF OLD.Username != NEW.Username OR OLD.Password != NEW.Password THEN
+                    INSERT INTO users_changes_log (ID_User, old_username, new_username, old_password, new_password, change_timestamp)
+                    VALUES (OLD.ID_User, OLD.Username, NEW.Username, OLD.Password, NEW.Password, NOW());
+                END IF;
+            END $$
+            delimiter ;`);
+
+        // Create a stored procedure to get user recommendations
+        await executeQuery(`
+            DELIMITER //
+
+            CREATE PROCEDURE InsertNewUser (
+                IN p_Username VARCHAR(50),
+                IN p_Password VARCHAR(255),
+                IN p_RoleUser VARCHAR(10)
+            )
+            BEGIN
+                -- var to count existing users
+                DECLARE user_count INT;
+
+                -- check if role is valid
+                IF p_RoleUser NOT IN ('Admin', 'Player', 'Editor') THEN
+                    SIGNAL SQLSTATE '45000'
+                    SET MESSAGE_TEXT = 'Invalid user role.';
+                ELSE
+                    -- check if user already exists
+                    SELECT COUNT(*) INTO user_count FROM Users WHERE Username = p_Username;
+                    IF user_count > 0 THEN
+                        SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'Username already exists.';
+                    ELSE
+                        SET p_Password = p_Password;
+                        -- insert user
+                        INSERT INTO Users (Username, Password, Role_User)
+                        VALUES (p_Username, p_Password, p_RoleUser);
+                    END IF;
+                END IF;
+            END //
+
+            DELIMITER ;
+
+
+
+            DELIMITER //
+
+            CREATE PROCEDURE InsertGame (
+                IN p_User_ID INT,
+                IN p_Description_Game VARCHAR(500),
+                IN p_Name_Game VARCHAR(50),
+                IN p_Min_players_Game INT,
+                IN p_Max_players_Game INT,
+                IN p_Min_age_Game DECIMAL(15,2),
+                IN p_Playing_time_Game DECIMAL(15,2),
+                IN p_Year_published_Game DECIMAL(15,2),
+                IN p_Thumbnail_Game VARCHAR(500)
+            )
+            BEGIN
+                DECLARE user_role VARCHAR(10);
+
+                -- get role of the user
+                SELECT Role_User INTO user_role FROM Users WHERE ID_User = p_User_ID;
+
+                -- check is user has editor or admin role
+                IF user_role IN ('Editor', 'Admin') THEN
+                    -- check if game not already exists
+                    IF NOT EXISTS (SELECT 1 FROM Games WHERE Name_Game = p_Name_Game) THEN
+                        -- Iinsert game
+                        INSERT INTO Games (
+                            Description_Game,
+                            Name_Game,
+                            Min_players_Game,
+                            Max_players_Game,
+                            Min_age_Game,
+                            Playing_time_Game,
+                            Year_published_Game,
+                            Thumbnail_Game
+                        )
+                        VALUES (
+                            p_Description_Game,
+                            p_Name_Game,
+                            p_Min_players_Game,
+                            p_Max_players_Game,
+                            p_Min_age_Game,
+                            p_Playing_time_Game,
+                            p_Year_published_Game,
+                            p_Thumbnail_Game
+                        );
+                    ELSE
+                        SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'A game with this name already exists.';
+                    END IF;
+                ELSE
+                    SIGNAL SQLSTATE '45000'
+                    SET MESSAGE_TEXT = 'Only users with Editor or Admin role can insert games.';
+                END IF;
+            END //
+
+            DELIMITER ;
+
+
+
+            DELIMITER //
+
+            CREATE PROCEDURE UpdateUserPassword (
+                IN p_UserID INT,
+                IN p_CurrentPassword VARCHAR(255),
+                IN p_NewPassword VARCHAR(255)
+            )
+            BEGIN
+                -- variable to count existing users
+                DECLARE user_count INT;
+                DECLARE stored_password VARCHAR(255);
+
+                -- check if user exist
+                SELECT COUNT(*) INTO user_count FROM Users WHERE ID_User = p_UserID;
+
+                IF user_count = 0 THEN
+                    SIGNAL SQLSTATE '45000'
+                    SET MESSAGE_TEXT = 'User not found.';
+                ELSE
+                    -- get old password
+                    SELECT Password INTO stored_password FROM Users WHERE ID_User = p_UserID;
+
+                    IF p_CurrentPassword = stored_password THEN
+                        -- set new password
+                        SET p_NewPassword = p_NewPassword;
+
+                        -- update password
+                        UPDATE Users
+                        SET Password = p_NewPassword
+                        WHERE ID_User = p_UserID;
+                    ELSE
+                        SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'Current password is incorrect.';
+                    END IF;
+                END IF;
+            END //
+
+            DELIMITER ;
+
+
+            DELIMITER //
+
+            CREATE PROCEDURE generate_recommendations(IN user_id INT)
+            BEGIN
+            START TRANSACTION;
+
+            -- insert new recommendations (matching category OR mechanic)
+            -- It identifies games that share at least one category or mechanic with the user's liked games
+            INSERT INTO gamerecommendations (ID_User, ID_Game, Recommendation_Date, Score)
+            SELECT
+                user_id AS ID_User,
+                h.ID_Game,
+                NOW() AS Recommendation_Date,
+                COUNT(*) AS Score
+            FROM have_a h
+            WHERE (
+                h.ID_Category IN (
+                SELECT ha.ID_Category
+                FROM have_a ha
+                WHERE ha.ID_Game IN (
+                    SELECT la.ID_Game
+                    FROM like_a la
+                    WHERE la.ID_User = user_id
+                )
+                )
+                OR
+                h.ID_Mechanics IN (
+                SELECT ha.ID_Mechanics
+                FROM have_a ha
+                WHERE ha.ID_Game IN (
+                    SELECT la.ID_Game
+                    FROM like_a la
+                    WHERE la.ID_User = user_id
+                )
+                )
+            )
+            AND h.ID_Game NOT IN (
+                SELECT la.ID_Game
+                FROM like_a la
+                WHERE la.ID_User = user_id
+            )
+            GROUP BY h.ID_Game;
+
+            COMMIT;
+            END;
+            //
+
+            DELIMITER ;`);
+
+        // Create transaction
+        await executeQuery(`START TRANSACTION;
+            -- Insert into Users table
+            INSERT INTO Users (Username, Password, Role_User) VALUES ('admin', 'admin', 'Admin');
+            INSERT INTO Users (Username, Password, Role_User) VALUES ('player1', 'password1', 'Player');
+            INSERT INTO Users (Username, Password, Role_User) VALUES ('editor1', 'password2', 'Editor');
+            COMMIT;`);
+
+
         console.log('Database initialized successfully!');
     } catch (error) {
         console.error('Error initializing database:', error);
