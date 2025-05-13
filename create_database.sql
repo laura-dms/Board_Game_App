@@ -1,4 +1,4 @@
-drop database board_games;
+drop database if exists board_games;
 create database if not exists board_games;
 use board_games;
 

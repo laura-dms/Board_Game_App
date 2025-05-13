@@ -13,11 +13,14 @@
 <script>
 export default {
   name: "Navbar",
-  computed: {
-    isUserLoggedIn() {
-      return !!localStorage.getItem("user");
-    },
-  },
+computed: {
+  isUserLoggedIn() {
+    // on ajoute this.$route comme dépendance implicite
+    this.$route;
+    return !!localStorage.getItem("user");
+  }
+},
+
   methods: {
     logout() {
       localStorage.removeItem("user");

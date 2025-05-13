@@ -2,7 +2,14 @@
     <div class="game-box">
       <div class="game">
         <img :src="poster" alt="Game Poster" class="poster" :class="{ 'active-border': isFavorite }" />
-        <div class="popup-star" :class="{ 'active-star': star === '⭐' }">{{ star }}</div>
+        <div
+  class="popup-star"
+  :class="{ 'active-star': star === '⭐' }"
+  @click="handleLike"
+>
+  {{ star }}
+</div>
+
         <p :class="['game-title', isLongTitle ? 'multi-line' : 'single-line']">{{ title }}</p>
         <p class="game-description">{{ description }}</p>
       </div>
@@ -18,12 +25,46 @@
       description: { type: String, default: 'Game Description' },
       isFavorite: { type: Boolean, default: false },
       star: { type: String, default: '☆' },
+      gameId: { type: Number, required: true }
     },
     computed: {
       isLongTitle() {
         return this.title.length > 25;
       }
+    },
+    methods: {async handleLike() {
+  const username = localStorage.getItem('user');
+  if (!username) {
+    console.error('Utilisateur non connecté');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/like', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: username,
+        gameId: this.gameId,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      console.log('Jeu liké avec succès');
+      // Tu peux mettre à jour l'UI ici, par exemple augmenter un compteur de likes
+    } else {
+      console.error('Erreur lors du like :', data.error);
     }
+  } catch (error) {
+    console.error('Erreur réseau :', error);
+  }
+}
+}
+
   };
   </script>
   

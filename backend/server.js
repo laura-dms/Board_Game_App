@@ -141,6 +141,159 @@ app.get('/api/games', async (req, res) => {
   }
 });
 
+app.post('/api/likes', async (req, res) => {
+  const { username, gameId } = req.body;
+
+  // --- Basic Input Validation ---
+  if (!username || !gameId) {
+    return res.status(400).json({ error: 'Username and gameId are required.' });
+  }
+
+  let connection; // Declare connection variable outside try block
+
+  try {
+     // Get a connection from the pool for transaction
+     connection = await pool.promise().getConnection();
+     await connection.beginTransaction();
+
+     // --- 1. Find User ID from Username ---
+     const [users] = await connection.query('SELECT ID_User FROM users WHERE Username = ?', [username]);
+
+     if (users.length === 0) {
+       await connection.rollback(); // Rollback transaction
+       connection.release();      // Release connection
+       return res.status(404).json({ error: 'User not found.' });
+     }
+     const userId = users[0].ID_User;
+
+     // --- 2. Check if the like already exists ---
+     const [likes] = await connection.query(
+       'SELECT COUNT(*) as count FROM like_a WHERE ID_User = ? AND ID_Game = ?',
+       [userId, gameId]
+     );
+     const likeExists = likes[0].count > 0;
+
+     let newLikeStatus;
+
+     // --- 3. Insert or Delete the like ---
+     if (likeExists) {
+       // Like exists, so delete it (unlike)
+       await connection.query(
+         'DELETE FROM like_a WHERE ID_User = ? AND ID_Game = ?',
+         [userId, gameId]
+       );
+       newLikeStatus = false; // User unliked the game
+       console.log(`User ${userId} unliked game ${gameId}`);
+     } else {
+       // Like doesn't exist, so insert it (like)
+       await connection.query(
+         'INSERT INTO like_a (ID_User, ID_Game, Date_like) VALUES (?, ?, NOW())',
+         [userId, gameId]
+       );
+       newLikeStatus = true; // User liked the game
+       console.log(`User ${userId} liked game ${gameId}`);
+     }
+
+     // --- 4. Commit Transaction ---
+     await connection.commit();
+
+     // --- 5. Send Success Response ---
+     res.status(200).json({ liked: newLikeStatus }); // Return the new status
+
+  } catch (error) {
+    console.error('Error processing like request:', error);
+    // Rollback transaction in case of any error during the process
+    if (connection) {
+        try {
+            await connection.rollback();
+        } catch (rollbackError) {
+            console.error('Error rolling back transaction:', rollbackError);
+        }
+    }
+    // Send generic error response
+    res.status(500).json({ error: 'Database error occurred while updating like status.' });
+  } finally {
+      // --- 6. Release Connection ---
+      if (connection) {
+          connection.release();
+      }
+  }
+});
+
+app.post('/api/like', async (req, res) => {
+  const { username, gameId } = req.body;
+
+  try {
+    const [[user]] = await pool.query('SELECT ID_User FROM users WHERE Username = ?', [username]);
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+
+    await pool.query(
+      'INSERT INTO like_a (ID_User, ID_Game, Date_like) VALUES (?, ?, NOW())',
+      [user.ID_User, gameId]
+    );
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+app.get('/recommendations/:username', async (req, res) => {
+  const username = req.params.username;
+
+  try {
+    // 1. Récupérer l'ID_User à partir du username
+    const [userResult] = await pool.query(
+      'SELECT ID_User FROM users WHERE Username = ?',
+      [username]
+    );
+
+    if (userResult.length === 0) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    const userId = userResult[0].ID_User;
+
+    // 2. Appeler la procédure stockée
+    await pool.query('CALL generate_recommendations(?)', [userId]);
+
+    // 3. Récupérer les recommandations depuis la table gamerecommendations
+    const [recommendations] = await pool.query(
+      'SELECT * FROM gamerecommendations WHERE ID_User = ? ORDER BY Score DESC',
+      [userId]
+    );
+
+    res.json(recommendations);
+  } catch (err) {
+    console.error('Erreur lors de la récupération des recommandations :', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+app.get('/recommendations/1/:username', async (req, res) => {
+  const { username } = req.params;
+
+  try {
+    const [rows] = await pool.execute(`
+      SELECT g.ID_Game, g.Name_Game, g.Description_Game, g.Thumbnail_Game
+      FROM gamerecommendations gr
+      JOIN users u ON gr.ID_User = u.ID_User
+      JOIN games g ON gr.ID_Game = g.ID_Game
+      WHERE u.Username = ?
+      ORDER BY gr.Score DESC
+      LIMIT 10
+    `, [username]);
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching recommendations:", err);
+    res.status(500).json({ error: 'Erreur serveur lors de la récupération des recommandations' });
+  }
+});
+
+
+
 // Fetch Games Function
 async function fetchGames() {
   try {
