@@ -1438,10 +1438,22 @@ async function initializeDatabase() {
         // Create triggers for data integrity
         await executeQuery(`
             delimiter $$
-            CREATE TRIGGER trg_click_on
+            CREATE TRIGGER TR_click_on_BeforeInsert 
             BEFORE INSERT ON click_on
             FOR EACH ROW
             BEGIN
+                IF NEW.Date_click IS NULL THEN
+                    SET NEW.Date_click = NOW();
+                END IF;
+
+                SELECT COUNT(*) INTO @click_count
+                FROM click_on
+                WHERE ID_User = NEW.ID_User AND ID_Game = NEW.ID_Game
+                AND Date_click > NOW() - INTERVAL 10 SECOND;
+                IF @click_count > 0 THEN
+                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Too many clicks on the same game in a short period.';
+                END IF;
+
                 DECLARE v_count INT;
                 SELECT COUNT(*) INTO v_count FROM Users WHERE ID_User = NEW.ID_User;
                 IF v_count = 0 THEN
@@ -1451,10 +1463,21 @@ async function initializeDatabase() {
             delimiter ;
 
             delimiter $$
-            CREATE TRIGGER trg_like_a
+            CREATE TRIGGER TR_like_a_BeforeInsert
             BEFORE INSERT ON like_a
             FOR EACH ROW
             BEGIN
+                IF NEW.Date_like IS NULL THEN
+                    SET NEW.Date_like = NOW();
+                END IF;
+
+                SELECT COUNT(*) INTO @like_count
+                FROM like_a
+                WHERE ID_User = NEW.ID_User AND ID_Game = NEW.ID_Game;
+                IF @like_count > 0 THEN
+                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'User has already liked this game.';
+                END IF;
+
                 DECLARE v_count INT;
                 SELECT COUNT(*) INTO v_count FROM Users WHERE ID_User = NEW.ID_User;
                 IF v_count = 0 THEN
@@ -1575,13 +1598,9 @@ async function initializeDatabase() {
                     END IF;
                 END IF;
             END //
-
             DELIMITER ;
 
-
-
             DELIMITER //
-
             CREATE PROCEDURE InsertGame (
                 IN p_User_ID INT,
                 IN p_Description_Game VARCHAR(500),
@@ -1633,13 +1652,9 @@ async function initializeDatabase() {
                     SET MESSAGE_TEXT = 'Only users with Editor or Admin role can insert games.';
                 END IF;
             END //
-
             DELIMITER ;
 
-
-
             DELIMITER //
-
             CREATE PROCEDURE UpdateUserPassword (
                 IN p_UserID INT,
                 IN p_CurrentPassword VARCHAR(255),
@@ -1674,16 +1689,12 @@ async function initializeDatabase() {
                     END IF;
                 END IF;
             END //
-
             DELIMITER ;
 
-
             DELIMITER //
-
             CREATE PROCEDURE generate_recommendations(IN user_id INT)
             BEGIN
             START TRANSACTION;
-
             -- insert new recommendations (matching category OR mechanic)
             -- It identifies games that share at least one category or mechanic with the user's liked games
             INSERT INTO gamerecommendations (ID_User, ID_Game, Recommendation_Date, Score)
@@ -1724,7 +1735,6 @@ async function initializeDatabase() {
             COMMIT;
             END;
             //
-
             DELIMITER ;`);
 
         // Create transaction
