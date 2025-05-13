@@ -10,7 +10,7 @@
 
 <script>
 import Footer from './Footer.vue';
-import GamePage from './GamePage.vue';
+import GamePage from './GamePage.vue'; 
 import ResearchBar from './ResearchBar.vue';
 import axios from 'axios';
 
@@ -31,26 +31,31 @@ export default {
     async fetchGames() {
       try {
         const response = await axios.get("http://localhost:3001/api/games");
+        // Utiliser directement les clés fournies par le backend
         this.allGames = response.data.map((game) => ({
-          id: game.ID_Game || null,
-          title: game.Name_Game || "No Title",
-          poster: game.Thumbnail_Game || "https://placehold.co/200x300?text=No+Image",
-          description: game.Description_Game || "No Description Available",
+          id: game.id || null, // Utiliser game.id
+          title: game.title || "No Title", // Utiliser game.title
+          poster: game.poster || "https://placehold.co/200x300?text=No+Image", // Utiliser game.poster
+          description: game.description || "No Description Available", // Utiliser game.description
         }));
         this.filteredGames = this.allGames; // Initially display all games
       } catch (error) {
         console.error("Error fetching games:", error);
+        this.allGames = []; // S'assurer que c'est vide en cas d'erreur
+        this.filteredGames = [];
       }
     },
     handleSearch(query) {
-      // Filter games based on the search query
+      if (!query) {
+        this.filteredGames = this.allGames;
+        return;
+      }
       this.filteredGames = this.allGames.filter((game) =>
         game.title.toLowerCase().includes(query.toLowerCase())
       );
     },
   },
   mounted() {
-    // Fetch games when the component is mounted
     this.fetchGames();
   },
 };

@@ -1,165 +1,230 @@
 import express from 'express';
-import bodyParser from 'body-parser';
+import mysql from 'mysql2/promise';
 import cors from 'cors';
-import mysql from 'mysql2';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import dotenv from 'dotenv';
+import path from 'path'; // Souvent utile, bien que non utilisé directement dans votre code actuel
+import { fileURLToPath } from 'url'; // Pour obtenir __dirname dans les modules ES
+
+// Simuler __dirname pour les modules ES si nécessaire (pas directement utilisé ici mais bonne pratique)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Spécifiez explicitement le chemin vers le fichier .env
+dotenv.config({ path: path.resolve(__dirname, '.env') }); // Charge les variables d'environnement du fichier .env
 
 const app = express();
-const port = 3001; // Backend server port
-const secretKey = crypto.randomBytes(64).toString('hex');
+const port = process.env.BACKEND_PORT || 3001;
 
-dotenv.config();
+app.use(cors()); // Active CORS pour toutes les routes
+app.use(express.json()); // Permet de parser le JSON dans les corps de requête
 
-// MySQL Database Connection
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
-}).promise();
-
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
-
-// Default route for root path
-app.get('/', (req, res) => {
-  res.send('Welcome to the Board Game App API!');
-});
-
-// Verify Token Middleware
-const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'No token provided' });
-
-  jwt.verify(token, secretKey, (err, decoded) => {
-    if (err) return res.status(401).json({ message: 'Invalid token' });
-    req.user = decoded;
-    next();
-  });
-};
-
-// API Endpoints
-
-// Register Endpoint
-app.post('/register', async (req, res) => {
-  const { Username, Password } = req.body;
-
-  if (!Username || !Password) {
-    return res.status(400).json({ message: 'Username and Password are required' });
-  }
-
-  try {
-    const hashedPassword = await bcrypt.hash(Password, 10);
-    pool.query(
-      'INSERT INTO Users (Username, Password, Role_User) VALUES (?, ?, "User")',
-      [Username, hashedPassword],
-      (err, results) => {
-        if (err) {
-          return res.status(500).json({ message: err.message });
-        }
-        const userId = results.insertId;
-        const token = jwt.sign({ userId }, secretKey, { expiresIn: '1h' });
-        res.status(201).json({ message: 'User created successfully', token });
-      }
-    );
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-app.post('/api/login', async (req, res) => { // Make the main route handler async
-  console.log("Login request received:", req.body);
-
-  const { Username, Password } = req.body;
-
-  if (!Username || !Password) {
-    console.log("Missing Username or Password");
-    return res.status(400).json({ message: 'Username and Password are required' });
-  }
-
-  console.log(`Attempting to query database for user: ${Username}`);
-
-  try { // Wrap the database operation and subsequent logic in a try-catch
-    const [results] = await pool.query('SELECT * FROM Users WHERE Username = ?', [Username]);
-    // Note: When using pool.promise().query(), results is typically the first element of the array returned.
-    // For SELECT, it's an array of rows. For INSERT/UPDATE, it's an OkPacket.
-
-    console.log("Query results:", results);
-
-    if (!results || results.length === 0) { // Check if results array is empty or undefined
-      console.log("No user found with the provided username:", Username);
-      return res.status(401).json({ message: 'Invalid credentials - user not found.' });
+// Configuration du pool de connexions MySQL
+let pool;
+try {
+    pool = mysql.createPool({
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER, // Sera maintenant correctement chargé
+        password: process.env.DB_PASSWORD, // Sera maintenant correctement chargé
+        database: process.env.DB_NAME, // Sera maintenant correctement chargé
+        port: parseInt(process.env.DB_PORT || '3306', 10),
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
+    });
+    console.log("Connecté avec succès à la base de données MySQL.");
+    if (!process.env.DB_USER) {
+        console.warn("ATTENTION: La variable d'environnement DB_USER n'est pas définie. Vérifiez votre fichier .env et sa configuration.");
     }
-
-    const user = results[0];
-    console.log("User found:", user);
-
-    if (!user || typeof user.Password !== 'string') {
-      console.error("User data is invalid or password field is missing/not a string for user:", Username, user);
-      return res.status(500).json({ message: 'Server error: Invalid user data.' });
-    }
-
-    const isPasswordValid = await bcrypt.compare(Password, user.Password);
-    console.log("Password valid for user", Username, ":", isPasswordValid);
-    console.log
-
-    if (!isPasswordValid) {
-      console.log("Password comparison failed for user:", Username);
-      return res.status(401).json({ message: 'Invalid credentials - password mismatch.' });
-    }
-
-    const token = jwt.sign({ userId: user.ID_User }, secretKey, { expiresIn: '1h' });
-    console.log("Token generated for user", Username, ":", token);
-
-    res.json({ success: true, username: user.Username, token });
-
-  } catch (error) {
-    console.error("Error during login processing (database or other):", error); // More generic error log
-    if (!res.headersSent) {
-      res.status(500).json({ message: 'Server error during login processing. Please check server logs.' });
-    }
-  }
-});
-
-app.get('/api/login', (req, res) => {
-  res.send('This is the login endpoint. Please use POST requests to log in.');
-});
-
-// Get Games Endpoint
-app.get('/api/games', async (req, res) => {
-  try {
-    const [games] = await pool.query('SELECT * FROM Games');
-    res.json(games);
-  } catch (error) {
-    console.error("Error fetching games:", error);
-    res.status(500).json({ message: "Error fetching games" });
-  }
-});
-
-// Fetch Games Function
-async function fetchGames() {
-  try {
-    const response = await axios.get("http://localhost:3001/api/games");
-    console.log("Fetched games:", response.data); // Log the raw data
-    this.allGames = response.data.map((game) => ({
-      id: game.id || null,
-      title: game.title || "No Title",
-      poster: game.poster || "https://placehold.co/200x300?text=No+Image",
-      description: game.description || "No Description Available",
-    }));
-    console.log("Processed games:", this.allGames); // Log the processed data
-    this.filteredGames = this.allGames;
-  } catch (error) {
-    console.error("Error fetching games:", error);
-  }
+} catch (error) {
+    console.error("Erreur lors de la création du pool de connexions à la base de données:", error);
+    process.exit(1); // Quitte l'application si la connexion échoue
 }
 
-// Launch the Server
+// Endpoint pour lister les catégories
+app.get('/api/categories', async (req, res) => {
+    try {
+        const [rows] = await pool.query("SELECT ID_Category, Category_Name FROM Categories ORDER BY Category_Name");
+        res.json(rows);
+    } catch (error) {
+        console.error("Erreur lors de la récupération des catégories:", error);
+        res.status(500).json({ error: 'Impossible de récupérer les catégories' });
+    }
+});
+
+// Endpoint pour lister les mécaniques
+app.get('/api/mechanics', async (req, res) => {
+    try {
+        const [rows] = await pool.query("SELECT ID_Mechanics, Mechanic_name FROM Mechanics ORDER BY Mechanic_name");
+        res.json(rows);
+    } catch (error) {
+        console.error("Erreur lors de la récupération des mécaniques:", error);
+        res.status(500).json({ error: 'Impossible de récupérer les mécaniques' });
+    }
+});
+
+// Endpoint pour obtenir des recommandations de jeux
+app.post('/api/recommendations', async (req, res) => {
+    const { criteria: userCriteria } = req.body;
+
+    if (!userCriteria || !Array.isArray(userCriteria) || userCriteria.length === 0) {
+        return res.status(400).json({ error: 'Les critères sont requis.' });
+    }
+
+    try {
+        const [allGames] = await pool.query("SELECT * FROM Games");
+        if (allGames.length === 0) {
+            return res.json({ recommendations: [] });
+        }
+
+        const [gameCategoryLinks] = await pool.query("SELECT DISTINCT ID_Game, ID_Category FROM have_a WHERE ID_Category IS NOT NULL");
+        const [gameMechanicLinks] = await pool.query("SELECT DISTINCT ID_Game, ID_Mechanics FROM have_a WHERE ID_Mechanics IS NOT NULL");
+
+        const gameCategoriesMap = new Map();
+        gameCategoryLinks.forEach(link => {
+            if (!gameCategoriesMap.has(link.ID_Game)) {
+                gameCategoriesMap.set(link.ID_Game, new Set());
+            }
+            gameCategoriesMap.get(link.ID_Game).add(link.ID_Category);
+        });
+
+        const gameMechanicsMap = new Map();
+        gameMechanicLinks.forEach(link => {
+            if (!gameMechanicsMap.has(link.ID_Game)) {
+                gameMechanicsMap.set(link.ID_Game, new Set());
+            }
+            gameMechanicsMap.get(link.ID_Game).add(link.ID_Mechanics);
+        });
+
+        let scoredGames = [];
+        const totalPossibleScoreForAllCriteria = userCriteria.reduce((sum, crit) => {
+            return sum + (userCriteria.length - (crit.order - 1));
+        }, 0);
+
+
+        for (const game of allGames) {
+            let gameMatchScore = 0;
+            const gameCats = gameCategoriesMap.get(game.ID_Game) || new Set();
+            const gameMechs = gameMechanicsMap.get(game.ID_Game) || new Set();
+
+            for (const crit of userCriteria) {
+                const criterionWeight = (userCriteria.length - (crit.order - 1));
+                let match = false;
+                const critValue = crit.value; 
+
+                switch (crit.id) {
+                    case 'category':
+                        if (gameCats.has(parseInt(critValue))) match = true;
+                        break;
+                    case 'mechanic':
+                        if (gameMechs.has(parseInt(critValue))) match = true;
+                        break;
+                    case 'minPlayers':
+                        if (game.Min_players_Game >= parseInt(critValue)) match = true;
+                        break;
+                    case 'maxPlayers':
+                        if (game.Max_players_Game <= parseInt(critValue)) match = true;
+                        break;
+                    case 'minAge':
+                        if (game.Min_age_Game <= parseInt(critValue)) match = true;
+                        break;
+                    case 'yearPublished':
+                        if (game.Year_published_Game == parseInt(critValue)) match = true;
+                        break;
+                    case 'playingTime':
+                        const playingTime = parseFloat(game.Playing_time_Game);
+                        if (critValue === '0-30') {
+                            if (playingTime <= 30) match = true;
+                        } else if (critValue === '30-60') {
+                            if (playingTime > 30 && playingTime <= 60) match = true;
+                        } else if (critValue === '60-120') {
+                            if (playingTime > 60 && playingTime <= 120) match = true;
+                        } else if (critValue === '120+') {
+                            if (playingTime > 120) match = true;
+                        }
+                        break;
+                }
+                if (match) {
+                    gameMatchScore += criterionWeight;
+                }
+            }
+
+            if (gameMatchScore > 0) {
+                const normalizedScore = totalPossibleScoreForAllCriteria > 0 ? Math.round((gameMatchScore / totalPossibleScoreForAllCriteria) * 100) : 0;
+                scoredGames.push({
+                    id: game.ID_Game,
+                    Name_Game: game.Name_Game,
+                    Description_Game: game.Description_Game,
+                    Thumbnail_Game: game.Thumbnail_Game,
+                    score: normalizedScore
+                });
+            }
+        }
+
+        scoredGames.sort((a, b) => {
+            if (b.score === a.score) {
+                return a.Name_Game.localeCompare(b.Name_Game);
+            }
+            return b.score - a.score;
+        });
+        
+        res.json({ recommendations: scoredGames.slice(0, 3) });
+
+    } catch (error) {
+        console.error("Erreur lors de la récupération des recommandations:", error);
+        res.status(500).json({ error: 'Impossible de récupérer les recommandations' });
+    }
+});
+
+app.get('/api/games', async (req, res) => {
+    try {
+        const [games] = await pool.query('SELECT ID_Game, Name_Game, Thumbnail_Game, Description_Game FROM Games');
+        const formattedGames = games.map(game => ({
+            id: game.ID_Game,
+            title: game.Name_Game,
+            poster: game.Thumbnail_Game,
+            description: game.Description_Game
+        }));
+        res.json(formattedGames);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des jeux depuis la BD:', error);
+        res.status(500).send('Erreur lors de la récupération des jeux');
+    }
+});
+
+// NEW ENDPOINT FOR A SINGLE GAME
+app.get('/api/games/:id', async (req, res) => {
+    const gameId = req.params.id;
+    try {
+        // Fetch all details for the game. Adjust the SELECT query as needed.
+        const [rows] = await pool.query('SELECT * FROM Games WHERE ID_Game = ?', [gameId]);
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Game not found' });
+        }
+        const game = rows[0];
+        // Format the game data similarly to how /api/games does, or provide more fields
+        const formattedGame = {
+            id: game.ID_Game,
+            title: game.Name_Game,
+            poster: game.Thumbnail_Game,
+            description: game.Description_Game,
+            Min_players_Game: game.Min_players_Game,
+            Max_players_Game: game.Max_players_Game,
+            Min_age_Game: game.Min_age_Game,
+            Playing_time_Game: game.Playing_time_Game,
+            Year_published_Game: game.Year_published_Game
+            // Add any other fields you want to display on the single game page
+        };
+        res.json(formattedGame);
+    } catch (error) {
+        console.error(`Erreur lors de la récupération du jeu ${gameId}:`, error);
+        res.status(500).json({ error: 'Impossible de récupérer les détails du jeu' });
+    }
+});
+
+app.get('/', (req, res) => {
+    res.send('Le backend de l\'application Board Game est en cours d\'exécution !');
+});
+
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+    console.log(`Serveur backend écoutant sur http://localhost:${port}`);
 });
