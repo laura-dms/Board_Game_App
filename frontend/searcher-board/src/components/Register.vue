@@ -7,7 +7,7 @@
           <input
             id="username"
             v-model="username"
-            placeholder="Choose a username"
+            placeholder="Choose your username"
             required
           />
         </div>
@@ -16,22 +16,24 @@
             type="password"
             id="password"
             v-model="password"
-            placeholder="Choose a password"
+            placeholder="Choose your password"
             required
           />
         </div>
         <div class="form-group">
-          <input
-            type="password"
-            id="confirmPassword"
-            v-model="confirmPassword"
-            placeholder="Confirm your password"
-            required
-          />
+          <button type="submit" class="register-button" :disabled="isLoading">
+            {{ isLoading ? 'Registering...' : 'Register' }}
+          </button>
         </div>
+
+
         <div class="form-group">
-          <button type="submit" class="register-button">Register</button>
+          <p class="register-link">
+            Already an account ?
+            <router-link to="/login">Login here</router-link>
+          </p>
         </div>
+
         <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
         <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
       </form>
@@ -51,6 +53,7 @@ export default {
       confirmPassword: "",
       successMessage: "",
       errorMessage: "",
+      isLoading: false,
     };
   },
   methods: {
@@ -61,6 +64,10 @@ export default {
         return;
       }
 
+      this.isLoading = true;
+      this.errorMessage = "";
+      this.successMessage = "";
+
       try {
         const response = await axios.post("http://localhost:3001/register", {
           Username: this.username,
@@ -68,27 +75,37 @@ export default {
         });
 
         if (response.data.success) {
-          this.successMessage = "Registration successful! You can now log in.";
-          this.errorMessage = "";
+          this.successMessage = "Registration successful! Redirecting to login...";
+
           this.username = "";
           this.password = "";
           this.confirmPassword = "";
+
+          setTimeout(() => {
+            this.$router.push({ name: "Login" });
+          }, 1500);
+
         } else {
-          this.errorMessage = "Registration failed: " + response.data.message;
+          // response.data.success est false
+          this.errorMessage = "Registration failed: " + (response.data.message || "Unknown error");
           this.successMessage = "";
         }
       } catch (error) {
-        if (error.response && error.response.data && error.response.data.message) {
+        if (error.response?.data?.message) {
           this.errorMessage = "Registration failed: " + error.response.data.message;
         } else {
           this.errorMessage = "An error occurred during registration. Please try again.";
+          console.error("Registration error details:", error);
         }
         this.successMessage = "";
+      } finally {
+        this.isLoading = false;
       }
     },
   },
 };
 </script>
+
 
 <style scoped>
 .register-page {

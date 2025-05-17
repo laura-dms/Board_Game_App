@@ -6,6 +6,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import { initializeDatabase } from './database.js';
 
 const app = express();
 const port = 3001; // Backend server port
@@ -21,6 +22,8 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   port: process.env.DB_PORT,
 }).promise();
+
+await initializeDatabase();
 
 // Middleware
 app.use(cors());
@@ -50,27 +53,27 @@ app.post('/register', async (req, res) => {
   const { Username, Password } = req.body;
 
   if (!Username || !Password) {
-    return res.status(400).json({ message: 'Username and Password are required' });
+    return res.status(400).json({ success: false, message: 'Username and Password are required' });
   }
 
   try {
     const hashedPassword = await bcrypt.hash(Password, 10);
-    pool.query(
+    const [results] = await pool.query(
       'INSERT INTO Users (Username, Password, Role_User) VALUES (?, ?, "User")',
-      [Username, hashedPassword],
-      (err, results) => {
-        if (err) {
-          return res.status(500).json({ message: err.message });
-        }
-        const userId = results.insertId;
-        const token = jwt.sign({ userId }, secretKey, { expiresIn: '1h' });
-        res.status(201).json({ message: 'User created successfully', token });
-      }
+      [Username, hashedPassword]
     );
+
+    const userId = results.insertId;
+    const token = jwt.sign({ userId }, secretKey, { expiresIn: '1h' });
+
+    return res.status(201).json({ success: true, message: 'User created successfully', token });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error during registration:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
+
+
 
 app.post('/api/login', async (req, res) => { // Make the main route handler async
   console.log("Login request received:", req.body);

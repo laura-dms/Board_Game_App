@@ -3,6 +3,7 @@
     <div class="login-page">
       <form @submit.prevent="handleSubmit" class="login-form">
         <h2 class="title-login">Login</h2>
+
         <div class="form-group">
           <input
             id="username"
@@ -11,6 +12,7 @@
             required
           />
         </div>
+
         <div class="form-group">
           <input
             type="password"
@@ -20,15 +22,25 @@
             required
           />
         </div>
+
         <div class="form-group">
           <button type="submit" class="login-button">Login</button>
         </div>
+
+        <div class="form-group">
+          <p class="register-link">
+            No account?
+            <router-link to="/register">Register here</router-link>
+          </p>
+        </div>
+
         <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
         <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
       </form>
     </div>
   </div>
 </template>
+
 
 <script>
 import axios from 'axios';
