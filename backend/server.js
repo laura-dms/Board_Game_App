@@ -476,7 +476,7 @@ async function fetchGames() {
 }
 
 //Fetch Games clicked by user
-async function fetchGames(userId) { //  Added userId parameter
+async function fetchGamesbyId(userId) { //  Added userId parameter
   try {
     // API endpoint to fetch clicked games for a specific user
     const response = await axios.get(`http://localhost:3001/api/user/${userId}/games/clicked`);
