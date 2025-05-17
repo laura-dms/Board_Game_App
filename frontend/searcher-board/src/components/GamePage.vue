@@ -4,9 +4,11 @@
         <p>No games found</p>
       </div>
       <div v-else id="gamebox" class="game-grid">
+        <!-- Pass the game's id to gameId prop -->
         <Gamebox
-          v-for="game in games" 
+          v-for="game in games"
           :key="game.id"
+          :game-id="game.id" 
           :title="game.title"
           :poster="game.poster"
           :description="game.description"
@@ -16,10 +18,10 @@
       </div>
     </div>
   </template>
-  
+
   <script>
   import Gamebox from './Gamebox.vue';
-  
+
   export default {
     name: 'gamePage',
     components: {
@@ -33,7 +35,7 @@
     },
   };
   </script>
-  
+
   <style scoped>
   .game-grid {
     display: grid;
@@ -42,4 +44,3 @@
     padding: 20px;
   }
   </style>
-  

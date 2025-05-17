@@ -1,2 +1,18 @@
 # Board_Game_App
-L3 S6 - Advanced Databases 
+Installation guide :
+
+git clone repo-link
+
+cd Board_Game_App
+
+npm install
+
+To run :
+
+cd .\frontend\searcher-board
+npm run dev
+
+Launch server : cd ..\n
+cd ..\n
+cd .\backend \n
+node server.js

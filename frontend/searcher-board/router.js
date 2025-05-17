@@ -3,14 +3,16 @@ import Home from './src/components/Home.vue';
 import Login from './src/components/Login.vue';
 import Register from './src/components/Register.vue';
 import FindGame from './src/components/FindGame.vue';
-import FormSearch from './src/components/FormSearch.vue';
+import GameRecommendationForm from './src/components/GameRecommendationForm.vue';
+import SingleGamePage from './src/components/SingleGamePage.vue'; // Import the new component
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
   { path: '/login', name: 'Login', component: Login },
   { path: '/register', name: 'Register', component: Register },
   { path: '/find-game', name: 'FindGame', component: FindGame },
-  { path: '/form', name: 'FormSearch', component: FormSearch },
+  { path: '/GameRecommendationForm', name: 'GameRecommendations', component: GameRecommendationForm },
+  { path: '/game/:id', name: 'SingleGame', component: SingleGamePage, props: true }, // Add new route for single game
 ];
 
 const router = createRouter({
