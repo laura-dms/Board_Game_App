@@ -289,6 +289,39 @@ app.post('/api/login', async (req, res) => { // Make the main route handler asyn
   }
 });
 
+app.post('/api/profile/change-password', async (req, res) => {
+  const { username, currentPassword, newPassword } = req.body;
+
+  if (!username || !currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'All fields are required.' });
+  }
+
+  try {
+    const [users] = await pool.query('SELECT * FROM Users WHERE Username = ?', [username]);
+
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const user = users[0];
+
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.Password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Incorrect current password.' });
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    await pool.query('UPDATE Users SET Password = ? WHERE Username = ?', [hashedNewPassword, username]);
+
+    return res.json({ success: true, message: 'Password updated successfully.' });
+  } catch (error) {
+    console.error("Error during password update:", error);
+    return res.status(500).json({ message: 'Server error while updating password.' });
+  }
+});
+
+
 app.get('/api/login', (req, res) => {
   res.send('This is the login endpoint. Please use POST requests to log in.');
 });

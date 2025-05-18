@@ -1502,7 +1502,7 @@ export async function initializeDatabase() {
               IF NEW.Role_User NOT IN ('Admin', 'User', 'Editor') THEN
                   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid user role';
               END IF;
-              SET NEW.Password = SHA2(NEW.Password, 256);
+              SET NEW.Password = NEW.Password;
           END;
           `,
         
@@ -1517,7 +1517,7 @@ export async function initializeDatabase() {
               END IF;
         
               IF NEW.Password != OLD.Password THEN
-                  SET NEW.Password = SHA2(NEW.Password, 256);
+                  SET NEW.Password = NEW.Password;
               END IF;
           END;
           `,
@@ -1599,7 +1599,7 @@ export async function initializeDatabase() {
                 SET MESSAGE_TEXT = 'Username already exists.';
               ELSE
                 INSERT INTO Users (Username, Password, Role_User)
-                VALUES (p_Username, SHA2(p_Password, 256), p_RoleUser);
+                VALUES (p_Username, p_Password, p_RoleUser);
               END IF;
             END IF;
           END;
@@ -1675,9 +1675,9 @@ export async function initializeDatabase() {
             ELSE
               SELECT Password INTO stored_password FROM Users WHERE ID_User = p_UserID;
         
-              IF SHA2(p_CurrentPassword, 256) = stored_password THEN
+              IF p_CurrentPassword = stored_password THEN
                 UPDATE Users
-                SET Password = SHA2(p_NewPassword, 256)
+                SET Password = p_NewPassword
                 WHERE ID_User = p_UserID;
               ELSE
                 SIGNAL SQLSTATE '45000'
