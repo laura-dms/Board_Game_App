@@ -58,11 +58,6 @@ export default {
   },
   methods: {
     async handleRegister() {
-      if (this.password !== this.confirmPassword) {
-        this.errorMessage = "Passwords do not match.";
-        this.successMessage = "";
-        return;
-      }
 
       this.isLoading = true;
       this.errorMessage = "";

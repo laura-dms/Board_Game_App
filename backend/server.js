@@ -406,8 +406,7 @@ app.get('/recommendations/:username', async (req, res) => {
   const username = req.params.username;
 
   try {
-    // 1. Récupérer l'ID_User à partir du username
-    const [userResult] = await pool.query(
+    const [userResult] = await pool.execute(
       'SELECT ID_User FROM users WHERE Username = ?',
       [username]
     );
@@ -418,14 +417,18 @@ app.get('/recommendations/:username', async (req, res) => {
 
     const userId = userResult[0].ID_User;
 
-    // 2. Appeler la procédure stockée
+    // Appel de la procédure stockée
     await pool.query('CALL generate_recommendations(?)', [userId]);
 
-    // 3. Récupérer les recommandations depuis la table gamerecommendations
-    const [recommendations] = await pool.query(
-      'SELECT * FROM gamerecommendations WHERE ID_User = ? ORDER BY Score DESC',
-      [userId]
-    );
+    // Sélection enrichie avec les données des jeux
+    const [recommendations] = await pool.query(`
+      SELECT g.ID_Game, g.Name_Game, g.Description_Game, g.Thumbnail_Game
+      FROM gamerecommendations gr
+      JOIN games g ON gr.ID_Game = g.ID_Game
+      WHERE gr.ID_User = ?
+      ORDER BY gr.Score DESC
+      LIMIT 10
+    `, [userId]);
 
     res.json(recommendations);
   } catch (err) {
@@ -434,26 +437,6 @@ app.get('/recommendations/:username', async (req, res) => {
   }
 });
 
-app.get('/recommendations/1/:username', async (req, res) => {
-  const { username } = req.params;
-
-  try {
-    const [rows] = await pool.execute(`
-      SELECT g.ID_Game, g.Name_Game, g.Description_Game, g.Thumbnail_Game
-      FROM gamerecommendations gr
-      JOIN users u ON gr.ID_User = u.ID_User
-      JOIN games g ON gr.ID_Game = g.ID_Game
-      WHERE u.Username = ?
-      ORDER BY gr.Score DESC
-      LIMIT 10
-    `, [username]);
-
-    res.json(rows);
-  } catch (err) {
-    console.error("Error fetching recommendations:", err);
-    res.status(500).json({ error: 'Erreur serveur lors de la récupération des recommandations' });
-  }
-});
 
 
 

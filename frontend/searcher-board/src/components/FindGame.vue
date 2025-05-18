@@ -4,14 +4,17 @@
 
     <div class="recommendations-section" v-if="!isLoadingRecommendations && !recommendationsError && recommendedGames.length > 0">
       <h2>For You</h2>
+      <GamePage :games="recommendedGames" />
     </div>
      <div v-else-if="isLoadingRecommendations">
         <p>Loading recommendations...</p>
      </div>
+      <div v-else-if="recommendedGames.length == 0">
+        <p class="error-message">Start liking games to have personalized recommandations !</p>
+     </div>
      <div v-else-if="recommendationsError">
         <p class="error-message">Could not load recommendations: {{ recommendationsError }}</p>
      </div>
-     <GamePage :games="recommendedGames" />
 
      <hr/>
 
@@ -84,39 +87,41 @@ export default {
       this.isLoadingRecommendations = true;
       this.recommendationsError = null;
       this.recommendedGames = []; // Clear previous recommendations
-
+    
       try {
         const userString = localStorage.getItem("user");
         const user = JSON.parse(userString);
-
+      
         // Check if user object and username exist
         if (!user || !user.username) {
           this.recommendationsError = "Utilisateur non connecté.";
           console.warn("Attempted to fetch recommendations but user is not logged in.");
           return; // Stop execution if user is not logged in
         }
-
+      
         console.log("Fetching recommendations for username:", user.username);
+        
+        // Make the API call to the backend recommendations endpoint - MODIFIED URL
+        
 
-        // Make the API call to the backend recommendations endpoint
-        const response = await axios.get(`http://localhost:3001/recommendations/1/${user.username}`);
 
+        const response = await axios.get(`http://localhost:3001/recommendations/${user.username}`);
+      
         console.log("Recommendations API response:", response.data);
-
-        // --- IMPORTANT: Update this mapping based on your actual gamerecommendations table column names ---
-        // The backend does SELECT * FROM gamerecommendations.
-        // The keys in response.data will be the exact column names from that table.
+      
+        // --- IMPORTANT: Update this mapping based on the response from the SECOND endpoint ---
+        // The second endpoint returns data with columns: ID_Game, Name_Game, Description_Game, Thumbnail_Game
         this.recommendedGames = response.data.map((game) => ({
-          id: game.ID_Game || game.id || null, // Adjust based on actual API response keys for ALL games
-          title: game.Name_Game || game.title || "No Title",
-          poster: game.Thumbnail_Game || game.poster || "https://placehold.co/200x300?text=No+Image",
-          description: game.Description_Game || game.description || "No Description Available",
+          id: game.ID_Game || null,
+          title: game.Name_Game || "No Title",
+          poster: game.Thumbnail_Game || "https://placehold.co/200x300?text=No+Image",
+          description: game.Description_Game || "No Description Available",
         }));
-
+      
         // --- End of IMPORTANT section ---
-
+      
         console.log("Mapped recommendations:", this.recommendedGames);
-
+      
       } catch (err) {
         console.error("Error fetching recommendations:", err);
         // Provide more specific error message if possible
