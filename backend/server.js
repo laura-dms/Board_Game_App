@@ -170,6 +170,8 @@ app.post('/api/recommendations', async (req, res) => {
     }
 });
 
+
+// PAGE HOME
 app.get('/api/games', async (req, res) => {
     try {
         const [games] = await pool.query('SELECT ID_Game, Name_Game, Thumbnail_Game, Description_Game FROM Games');
@@ -279,7 +281,7 @@ app.post('/api/login', async (req, res) => { // Make the main route handler asyn
     const token = jwt.sign({ userId: user.ID_User }, secretKey, { expiresIn: '1h' });
     console.log("Token generated for user", Username, ":", token);
 
-    res.json({ success: true, username: user.Username, token });
+    res.json({ success: true, username: user.Username, token, userId : user.ID_User });
 
   } catch (error) {
     console.error("Error during login processing (database or other):", error); // More generic error log
@@ -327,9 +329,9 @@ app.get('/api/login', (req, res) => {
 });
 
 // Get Games Endpoint
-app.get('/api/games', async (req, res) => {
+app.get('/api/games/:gameID', async (req, res) => {
   try {
-    const [games] = await pool.query('SELECT * FROM Games');
+    const [games] = await pool.query('SELECT * FROM Games WHERE ID_Game = ? ', [gameID]);
     res.json(games);
   } catch (error) {
     console.error("Error fetching games:", error);

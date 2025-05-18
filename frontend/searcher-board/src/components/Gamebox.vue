@@ -1,16 +1,15 @@
 <template>
   <router-link :to="{ name: 'SingleGame', params: { id: gameId } }" class="game-box-link">
-    <div class="game-box">
+    <div class="game-box" @click="clicked_game">
       <div class="game">
         <img :src="poster" alt="Game Poster" class="poster" :class="{ 'active-border': isFavorite }" />
         <div
-  class="popup-star"
-  :class="{ 'active-star': star === '⭐' }"
-  @click="handleLike"
->
-  {{ star }}
-</div>
-
+          class="popup-star"
+          :class="{ 'active-star': star === '⭐' }"
+          @click="handleLike"
+        >
+          {{ star }}
+        </div>
         <p :class="['game-title', isLongTitle ? 'multi-line' : 'single-line']">{{ title }}</p>
         <p class="game-description">{{ description }}</p>
       </div>
@@ -22,7 +21,7 @@
 export default {
   name: 'GameBox',
   props: {
-    gameId: { type: [String, Number], required: true }, // Added gameId prop
+    gameId: { type: [String, Number], required: true },
     title: { type: String, default: 'Game Title' },
     poster: { type: String, default: 'https://placehold.co/600x400' },
     description: { type: String, default: 'Game Description' },
@@ -33,7 +32,30 @@ export default {
     isLongTitle() {
       return this.title.length > 25;
     }
-  }
+  },
+  methods: {
+    async clicked_game() {
+      console.log("Test");
+      // Add click to the database
+      try {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+          console.warn("User ID is not available.  Cannot record click.");
+          return;
+        }
+
+        await this.executeQuery(`
+          INSERT INTO click_on (ID_User, ID_Game, Date_click)
+          VALUES (?, ?, NOW())
+        `, [userId, this.gameId]); 
+
+        console.log("Click recorded in database.");
+
+      } catch (error) {
+        console.error("Error recording click:", error);
+      }
+    },
+  },
 };
 </script>
 

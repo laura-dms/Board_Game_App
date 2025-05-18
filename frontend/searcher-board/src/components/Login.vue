@@ -51,6 +51,7 @@ export default {
     return {
       username: "",
       password: "",
+      userId:"",
       successMessage: "",
       errorMessage: "",
     };
@@ -66,6 +67,7 @@ export default {
         const response = await axios.post("http://localhost:3001/api/login", {
           Username: this.username,
           Password: this.password,
+          UserID : this.userId,
         });
 
         console.log("Response from backend:", response); // Log the full response
@@ -77,7 +79,9 @@ export default {
           // Store an object containing username and token, stringified
           localStorage.setItem("user", JSON.stringify({
             username: response.data.username,
-            token: response.data.token // Assuming your backend provides a token
+            token: response.data.token,
+            userId : response.data.userId
+
           }));
           // --- END CORRECTED LINE ---
 

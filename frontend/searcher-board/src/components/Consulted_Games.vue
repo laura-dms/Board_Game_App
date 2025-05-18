@@ -33,15 +33,12 @@
     };
     },
     props: {
-        userId: { // Add a prop for the user ID.  Crucial for fetching the correct data.
-        type: Number,
-        required: true,
-        },
+      userId: "",
     },
     async mounted() {
         try {
         // Fetch games clicked on by the user from your backend API
-        const response = await axios.get(`/api/user/${this.userId}/games/clicked`); // 
+        const response = await axios.get(`/api/user/${userId = localStorage.getItem("userId")}/games/clicked`); // 
         this.games = response.data;
         } catch (error) {
         this.error = error.message; // Store the error message

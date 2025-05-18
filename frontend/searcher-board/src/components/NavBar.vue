@@ -6,6 +6,7 @@
       <li v-if="!isUserLoggedIn"><router-link to="/register">Register</router-link></li>
       <li v-if="isUserLoggedIn"><router-link to="/GameRecommendationForm">Form</router-link></li>
       <li v-if="isUserLoggedIn"><router-link to="/find-game">Find Game</router-link></li>
+      <li v-if="isUserLoggedIn"><router-link to="/history">History</router-link></li>
       <li v-if="isUserLoggedIn" @click="logout"><a href="#">Logout</a></li>
     </ul>
     <div class="user-info" v-if="isUserLoggedIn">

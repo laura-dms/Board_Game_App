@@ -40,13 +40,13 @@ const game = ref(null);
 const isLoading = ref(true);
 const error = ref('');
 
-const fetchGameDetails = async (gameId) => {
+const fetchGameDetails = async (gameID) => {
   isLoading.value = true;
   error.value = '';
   game.value = null;
   try {
     // The backend endpoint will be /api/games/:id
-    const response = await axios.get(`http://localhost:3001/api/games/${gameId}`);
+    const response = await axios.get(`http://localhost:3001/api/games/${gameID}`);
     game.value = response.data;
   } catch (err) {
     console.error("Error fetching game details:", err);
@@ -60,6 +60,7 @@ const fetchGameDetails = async (gameId) => {
   }
 };
 
+//A QUOI CA SERT SVP ?? :-(
 onMounted(() => {
   fetchGameDetails(route.params.id);
 });

@@ -6,6 +6,7 @@ import FindGame from './src/components/FindGame.vue';
 import GameRecommendationForm from './src/components/GameRecommendationForm.vue';
 import SingleGamePage from './src/components/SingleGamePage.vue'; // Import the new component
 import Profile from './src/components/Profile.vue'; // Import Profile component
+import History from './src/components/Consulted_Games.vue';
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -15,6 +16,7 @@ const routes = [
   { path: '/GameRecommendationForm', name: 'GameRecommendations', component: GameRecommendationForm },
   { path: '/game/:id', name: 'SingleGame', component: SingleGamePage, props: true }, // Add new route for single game
   { path: '/profile', name: 'Profile', component: Profile },
+  { path: '/history', name: 'History', component: History},
 ];
 
 const router = createRouter({
