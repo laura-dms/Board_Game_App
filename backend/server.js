@@ -270,7 +270,7 @@ app.post('/api/login', async (req, res) => { // Make the main route handler asyn
     }
 
     const isPasswordValid = await bcrypt.compare(Password, user.Password);
-    console.log("Password valid for user", Username, ":", isPasswordValid);
+    console.log("Password valid for user", Username, ":", isPasswordValid); 
     console.log
 
     if (!isPasswordValid) {
@@ -299,7 +299,11 @@ app.post('/api/profile/change-password', async (req, res) => {
   }
 
   try {
-    const [users] = await pool.query('SELECT * FROM Users WHERE Username = ?', [username]);
+    // Lock the user row for update
+    const [users] = await connection.query(
+      'SELECT * FROM Users WHERE Username = ? FOR UPDATE',
+      [username]
+    );
 
     if (!users || users.length === 0) {
       return res.status(404).json({ message: 'User not found.' });
@@ -328,16 +332,65 @@ app.get('/api/login', (req, res) => {
   res.send('This is the login endpoint. Please use POST requests to log in.');
 });
 
-// Get Games Endpoint
+// Get Games Endpoint (for a single game)
 app.get('/api/games/:gameID', async (req, res) => {
+  const gameIdFromParams = req.params.gameID;
   try {
-    const [games] = await pool.query('SELECT * FROM Games WHERE ID_Game = ? ', [gameID]);
-    res.json(games);
+    // 1. Fetch main game data from the Games table
+    const [gameRows] = await pool.query('SELECT * FROM Games WHERE ID_Game = ?', [gameIdFromParams]);
+
+    if (gameRows.length === 0) {
+      return res.status(404).json({ message: 'Game not found' });
+    }
+    const gameData = gameRows[0]; // The raw data from the Games table
+
+    // 2. Fetch associated categories for the game
+    const [categoryLinks] = await pool.query(
+      `SELECT c.Category_Name 
+       FROM Categories c
+       JOIN have_a ha ON c.ID_Category = ha.ID_Category
+       WHERE ha.ID_Game = ?`,
+      [gameIdFromParams]
+    );
+    // Format categories as a comma-separated string
+    const categories = categoryLinks.map(cat => cat.Category_Name).join(', ');
+
+    // 3. Fetch associated mechanics for the game
+    const [mechanicLinks] = await pool.query(
+      `SELECT m.Mechanic_name 
+       FROM Mechanics m
+       JOIN have_a ha ON m.ID_Mechanics = ha.ID_Mechanics 
+       WHERE ha.ID_Game = ?`,
+      [gameIdFromParams]
+    );
+    // Format mechanics as a comma-separated string
+    const mechanics = mechanicLinks.map(mech => mech.Mechanic_name).join(', ');
+
+    // 4. Construct the response object with keys expected by SingleGamePage.vue
+    const responseData = {
+      id: gameData.ID_Game,
+      title: gameData.Name_Game, // Frontend expects 'title'
+      poster: gameData.Thumbnail_Game, // Frontend expects 'poster'
+      description: gameData.Description_Game, // Frontend expects 'description'
+      Min_players_Game: gameData.Min_players_Game,
+      Max_players_Game: gameData.Max_players_Game,
+      Playing_time_Game: gameData.Playing_time_Game,
+      Min_age_Game: gameData.Min_age_Game,
+      Year_published_Game: gameData.Year_published_Game,
+      category: categories || 'Not specified', // Use fetched categories
+      mechanics: mechanics || 'Not specified' // Use fetched mechanics
+      // Add any other fields from gameData if needed by the frontend,
+      // ensuring the key names match what SingleGamePage.vue uses.
+    };
+
+    res.json(responseData);
+
   } catch (error) {
-    console.error("Error fetching games:", error);
-    res.status(500).json({ message: "Error fetching games" });
+    console.error(`Error fetching game with ID ${gameIdFromParams}:`, error);
+    res.status(500).json({ message: 'Error fetching game details from server' });
   }
 });
+
 
 app.post('/api/likes', async (req, res) => {
   const { username, gameId } = req.body;

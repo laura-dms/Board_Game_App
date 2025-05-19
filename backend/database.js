@@ -176,6 +176,9 @@ export async function initializeDatabase() {
             UNIQUE (ID_User, ID_Game) --  Prevent duplicate recommendations for the same user and game
         );
         `);
+
+        // Table-level locking
+        await pool.query('LOCK TABLES Users WRITE, Games WRITE, Categories WRITE, Mechanics WRITE, Creators WRITE, click_on WRITE, like_a WRITE, have_a WRITE');
         
         /* Hash procedure in Users password*/
         async function insertHashedUsersIntoDatabase() {
@@ -1250,6 +1253,9 @@ export async function initializeDatabase() {
             (266192, 53, 23, 75),
             (194655, 16, 66, 50),
             (124742, 73, 71, 56);`);
+
+        // Unlock tables
+        await pool.query('UNLOCK TABLES');
 
         // Insert views
         // Create views

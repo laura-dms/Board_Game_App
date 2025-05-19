@@ -81,7 +81,6 @@ export default {
             username: response.data.username,
             token: response.data.token,
             userId : response.data.userId
-
           }));
           // --- END CORRECTED LINE ---
 
