@@ -1,31 +1,31 @@
 {
-  "hash": "7aab7505",
-  "configHash": "e40c098c",
-  "lockfileHash": "273eda47",
-  "browserHash": "f2481dbc",
+  "hash": "59cdffa7",
+  "configHash": "bded149d",
+  "lockfileHash": "356f4b38",
+  "browserHash": "080361b6",
   "optimized": {
     "axios": {
-      "src": "../../node_modules/axios/index.js",
+      "src": "../../../../node_modules/axios/index.js",
       "file": "axios.js",
-      "fileHash": "6d13516d",
+      "fileHash": "62e6f6fa",
       "needsInterop": false
     },
     "vue": {
-      "src": "../../node_modules/vue/dist/vue.runtime.esm-bundler.js",
+      "src": "../../../../node_modules/vue/dist/vue.runtime.esm-bundler.js",
       "file": "vue.js",
-      "fileHash": "b6c52ada",
+      "fileHash": "9e7e4317",
       "needsInterop": false
     },
     "vue-router": {
       "src": "../../../../node_modules/vue-router/dist/vue-router.esm-bundler.js",
       "file": "vue-router.js",
-      "fileHash": "99095c28",
+      "fileHash": "15b4fae3",
       "needsInterop": false
     }
   },
   "chunks": {
-    "chunk-IJV5NOMV": {
-      "file": "chunk-IJV5NOMV.js"
+    "chunk-WHRMAYZ7": {
+      "file": "chunk-WHRMAYZ7.js"
     },
     "chunk-PZ5AY32C": {
       "file": "chunk-PZ5AY32C.js"

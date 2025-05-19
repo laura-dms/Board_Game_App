@@ -178,7 +178,7 @@ export async function initializeDatabase() {
         `);
 
         // Table-level locking
-        await pool.query('LOCK TABLES Users WRITE, Games WRITE, Categories WRITE, Mechanics WRITE, Creators WRITE, click_on WRITE, like_a WRITE, have_a WRITE');
+        await executeQuery('LOCK TABLES Users WRITE, Games WRITE, Categories WRITE, Mechanics WRITE, Creators WRITE, click_on WRITE, like_a WRITE, have_a WRITE');
         
         /* Hash procedure in Users password*/
         async function insertHashedUsersIntoDatabase() {
@@ -1256,7 +1256,7 @@ export async function initializeDatabase() {
             (124742, 73, 71, 56);`);
 
         // Unlock tables
-        await pool.query('UNLOCK TABLES');
+        await executeQuery('UNLOCK TABLES');
 
         // Insert views
         // Create views
