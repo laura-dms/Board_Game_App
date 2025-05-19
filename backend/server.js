@@ -571,6 +571,27 @@ async function fetchGamesbyId(userId) { //  Added userId parameter
   }
 }
 
+
+
+app.post('/api/games/clicked', (req, res) => {
+  const { userId, gameId } = req.body;
+
+  if (!userId || !gameId) {
+    return res.status(400).json({ error: 'Les champs userId et gameId sont requis.' });
+  }
+
+  const query = 'INSERT INTO click_on (ID_User, ID_Game, Date_click) VALUES (?, ?, NOW())';
+  pool.query(query, [userId, gameId], (error, results) => {
+    if (error) {
+      console.error('Erreur lors de l\'enregistrement du clic :', error);
+      return res.status(500).json({ error: 'Erreur serveur lors de l\'enregistrement du clic.' });
+    }
+    res.status(201).json({ message: 'Clic enregistré avec succès.' });
+  });
+});
+
+
+
 // Get Games Endpoint
 app.get('/api/user/:userId/games/clicked', async (req, res) => {
   const {userId} = req.body;
@@ -584,34 +605,62 @@ const [games_clicked] = await pool.query('SELECT * FROM click_on c JOIN Games g 
 });
 
 // Like / Unlike a game
-app.post('/api/games/:gameId/like', verifyToken, async (req, res) => {
-  const userId = req.user.userId;
+
+// Ajouter un like
+app.post('/api/games/:gameId/like', async (req, res) => {
+  const userId = req.body.userId; // fourni dans le corps de la requête
   const gameId = parseInt(req.params.gameId, 10);
 
   try {
-    const [[{ count }]] = await pool.query(
-      'SELECT COUNT(*) AS count FROM like_a WHERE ID_User = ? AND ID_Game = ?',
+    await pool.query(
+      'INSERT INTO like_a (ID_User, ID_Game, Date_like) VALUES (?, ?, NOW())',
       [userId, gameId]
     );
-
-    if (count > 0) {
-      await pool.query(
-        'DELETE FROM like_a WHERE ID_User = ? AND ID_Game = ?',
-        [userId, gameId]
-      );
-      return res.json({ liked: false });
-    } else {
-      await pool.query(
-        'INSERT INTO like_a (ID_User, ID_Game) VALUES (?, ?)',
-        [userId, gameId]
-      );
-      return res.status(201).json({ liked: true });
-    }
+    res.json({ liked: true });
   } catch (err) {
-    console.error('Error toggling like:', err);
-    return res.status(500).json({ error: 'Database error' });
+    if (err.code === 'ER_DUP_ENTRY') {
+      return res.status(409).send('Déjà liké');
+    }
+    console.error(err);
+    res.status(500).send('Erreur serveur');
   }
 });
+
+// Récupérer les jeux likés d’un utilisateur
+app.get('/api/users/:userId/likes', async (req, res) => {
+  const userId = parseInt(req.params.userId, 10);
+
+  try {
+    const [rows] = await pool.query(
+      'SELECT ID_Game FROM like_a WHERE ID_User = ?',
+      [userId]
+    );
+
+    const likedGameIds = rows.map(row => row.ID_Game);
+    res.json({ likedGameIds });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur serveur');
+  }
+});
+
+// Supprimer un like
+app.delete('/api/games/:gameId/like', async (req, res) => {
+  const userId = req.body.userId; // fourni dans le corps de la requête
+  const gameId = parseInt(req.params.gameId, 10);
+
+  try {
+    await pool.query(
+      'DELETE FROM like_a WHERE ID_User = ? AND ID_Game = ?',
+      [userId, gameId]
+    );
+    res.json({ liked: false });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur serveur');
+  }
+});
+
 
 // Get User Likes
 app.get('/api/users/me/likes', verifyToken, async (req, res) => {
