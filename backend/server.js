@@ -6,21 +6,31 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import path from 'path'; // Import the 'path' module
+import { fileURLToPath } from 'url'; // Import fileURLToPath
 import { initializeDatabase } from './database.js';
+
+// Determine the directory of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env file from the same directory as server.js
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const port = 3001; // Backend server port
 const secretKey = crypto.randomBytes(64).toString('hex');
 
-dotenv.config();
-
 // MySQL Database Connection
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
-  user: process.env.DB_USER,
+  user: process.env.DB_USER, // Ensure you are using process.env.DB_USER here
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
+  port: process.env.DB_PORT || 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 }).promise();
 
 console.log("Connecté avec succès à la base de données MySQL.");
@@ -328,14 +338,62 @@ app.get('/api/login', (req, res) => {
   res.send('This is the login endpoint. Please use POST requests to log in.');
 });
 
-// Get Games Endpoint
+// Get Games Endpoint (for a single game)
 app.get('/api/games/:gameID', async (req, res) => {
+  const gameIdFromParams = req.params.gameID;
   try {
-    const [games] = await pool.query('SELECT * FROM Games WHERE ID_Game = ? ', [gameID]);
-    res.json(games);
+    // 1. Fetch main game data from the Games table
+    const [gameRows] = await pool.query('SELECT * FROM Games WHERE ID_Game = ?', [gameIdFromParams]);
+
+    if (gameRows.length === 0) {
+      return res.status(404).json({ message: 'Game not found' });
+    }
+    const gameData = gameRows[0]; // The raw data from the Games table
+
+    // 2. Fetch associated categories for the game
+    const [categoryLinks] = await pool.query(
+      `SELECT c.Category_Name 
+       FROM Categories c
+       JOIN have_a ha ON c.ID_Category = ha.ID_Category
+       WHERE ha.ID_Game = ?`,
+      [gameIdFromParams]
+    );
+    // Format categories as a comma-separated string
+    const categories = categoryLinks.map(cat => cat.Category_Name).join(', ');
+
+    // 3. Fetch associated mechanics for the game
+    const [mechanicLinks] = await pool.query(
+      `SELECT m.Mechanic_name 
+       FROM Mechanics m
+       JOIN have_a ha ON m.ID_Mechanics = ha.ID_Mechanics 
+       WHERE ha.ID_Game = ?`,
+      [gameIdFromParams]
+    );
+    // Format mechanics as a comma-separated string
+    const mechanics = mechanicLinks.map(mech => mech.Mechanic_name).join(', ');
+
+    // 4. Construct the response object with keys expected by SingleGamePage.vue
+    const responseData = {
+      id: gameData.ID_Game,
+      title: gameData.Name_Game, // Frontend expects 'title'
+      poster: gameData.Thumbnail_Game, // Frontend expects 'poster'
+      description: gameData.Description_Game, // Frontend expects 'description'
+      Min_players_Game: gameData.Min_players_Game,
+      Max_players_Game: gameData.Max_players_Game,
+      Playing_time_Game: gameData.Playing_time_Game,
+      Min_age_Game: gameData.Min_age_Game,
+      Year_published_Game: gameData.Year_published_Game,
+      category: categories || 'Not specified', // Use fetched categories
+      mechanics: mechanics || 'Not specified' // Use fetched mechanics
+      // Add any other fields from gameData if needed by the frontend,
+      // ensuring the key names match what SingleGamePage.vue uses.
+    };
+
+    res.json(responseData);
+
   } catch (error) {
-    console.error("Error fetching games:", error);
-    res.status(500).json({ message: "Error fetching games" });
+    console.error(`Error fetching game with ID ${gameIdFromParams}:`, error);
+    res.status(500).json({ message: 'Error fetching game details from server' });
   }
 });
 
