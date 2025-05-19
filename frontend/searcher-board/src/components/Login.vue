@@ -121,7 +121,7 @@ export default {
 
 .title-login {
   margin: 10px;
-  color: #017bff;
+  color: var(--primary);
 }
 
 .login-form {
@@ -138,7 +138,7 @@ export default {
 }
 
 .login-button {
-  background-color: #017bff;
+  background-color: var(--primary);
   color: white;
   padding: 10px 20px;
   border: none;

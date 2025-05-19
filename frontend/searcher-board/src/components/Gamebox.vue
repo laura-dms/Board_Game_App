@@ -135,7 +135,7 @@ export default {
   margin: 0 auto;
   transition: opacity 0.5s ease;
   border-radius: 10px;
-  border: 3px solid black;
+  border: 3px solid var(--thedarkdevil);
 }
 
 .game-title {
@@ -201,7 +201,7 @@ export default {
   top: 10px;
   right: 10px;
   font-size: 36px;
-  color: white;
+  color: var(--thedarkdevil);
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   cursor: pointer;
   z-index: 2;

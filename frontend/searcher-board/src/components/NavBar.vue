@@ -70,7 +70,7 @@ export default {
 
 <style scoped>
 .navbar {
-  background-color: #017bff;
+  background-color: var(--primary);
   padding: 10px 20px;
   display: flex;
   justify-content: space-between;

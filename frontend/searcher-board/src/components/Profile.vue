@@ -126,7 +126,7 @@ button {
   width: 100%;
   padding: 10px 12px;
   font-size: 16px;
-  background-color: #2c7be5;
+  background-color: var(--jay);
   color: white;
   border: none;
   border-radius: 6px;

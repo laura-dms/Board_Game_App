@@ -114,7 +114,7 @@ export default {
 
 .title-register {
   margin: 10px;
-  color: #28a745;
+  color: var(--jay);
 }
 
 .register-form {
@@ -131,7 +131,7 @@ export default {
 }
 
 .register-button {
-  background-color: #28a745;
+  background-color: var(--jay);
   color: white;
   padding: 10px 20px;
   border: none;
