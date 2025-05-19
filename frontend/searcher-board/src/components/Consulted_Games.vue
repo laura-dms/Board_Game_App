@@ -1,62 +1,85 @@
 <template>
-    <div id="game_consulted">
-      <div v-if="games.length === 0"> <!-- if no consulted games are found, display a message -->
-        <p>No games consulted yet !</p>
-      </div>
-      <div v-else id="gamebox" class="game-grid">
-        <Gamebox
-  v-for="game in games" 
-  :key="game.ID_Game"
-  :gameId="game.ID_Game"
-  :title="game.Title"
-  :poster="game.Poster"
-  :description="game.Description"
-/>
- <!-- display all the games -->
-      </div>
+  <div class="clicked-games-section">
+    <h2>Games You Clicked</h2>
+
+    <div v-if="isLoading">
+      <p>Loading clicked games...</p>
     </div>
-  </template>
-  
+
+    <div v-else-if="error">
+      <p class="error-message">Could not load clicked games: {{ error }}</p>
+    </div>
+
+    <div v-else-if="clickedGames.length === 0">
+      <p class="info-message">You haven't clicked on any games yet.</p>
+    </div>
+
+    <GamePage v-else :games="clickedGames" />
+  </div>
+</template>
+
 <script>
-import Gamebox from './Gamebox.vue';
-import axios from 'axios'; // Import axios for making HTTP requests
+import axios from 'axios';
+import GamePage from './GamePage.vue';
 
 export default {
-  name: 'game_consulted',
+  name: 'ClickedGames',
   components: {
-    Gamebox,
+    GamePage,
   },
   data() {
     return {
-      games: [],
-      loading: true,
+      clickedGames: [],
+      isLoading: false,
       error: null,
     };
   },
-  props: {
-    userId: {
-      type: Number, // Ou Number, selon le type de ton userId
-      required: true, // Indique que cette prop est obligatoire
-    },
-  },
-  async mounted() {
-    try {
-      // Fetch games clicked on by the user from your backend API
+  methods: {
+    async fetchClickedGames() {
+      this.isLoading = true;
+      this.error = null;
 
-      const userData = localStorage.getItem('user');
-      if (!userData) return;
-      const { userId } = JSON.parse(userData);
-      if (!userId) return;
-    
+      try {
+        const userString = localStorage.getItem("user");
+        if (!userString) {
+          this.error = "user non connecté";
+          this.isLoading = false;
+          return;
+        }
+        
+        const user = JSON.parse(userString);
+        
+        if (!user.userId) {
+          this.error = "User ID undefined";
+          this.isLoading = false;
+          return;
+        }
+        
+        const response = await axios.get(`http://localhost:3001/api/user/${user.userId}/games/clicked`);
 
-      const response = await axios.get(`/api/user/${this.userId}/games/clicked`);
-      this.games = response.data;
-    } catch (error) {
-      this.error = error.message;
-      console.error('Error fetching clicked games:', error);
-    } finally {
-      this.loading = false;
+        console.log("User ID:", user.id);
+        console.log("Clicked games response:", response.data);
+
+        this.clickedGames = response.data.map((game) => ({
+          id: game.ID_Game || null,
+          title: game.Name_Game || "No Title",
+          poster: game.Thumbnail_Game || "https://placehold.co/200x300?text=No+Image",
+          description: game.Description_Game || "No Description Available",
+        }));
+
+      } catch (err) {
+        console.error("Erreur lors du chargement des jeux cliqués :", err);
+        this.error = err.response?.data?.message || err.message || 'Erreur inconnue';
+      } finally {
+        this.isLoading = false;
+      }
     }
+  },
+  mounted() {
+    this.fetchClickedGames();
+  },
+    activated() {
+    this.fetchClickedGames();
   },
 };
 </script>

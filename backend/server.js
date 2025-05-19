@@ -247,7 +247,7 @@ app.post('/register', async (req, res) => {
 
 
 
-app.post('/api/login', async (req, res) => { // Make the main route handler async
+app.post('/api/login', async (req, res) => {
   console.log("Login request received:", req.body);
 
   const { Username, Password } = req.body;
@@ -259,14 +259,12 @@ app.post('/api/login', async (req, res) => { // Make the main route handler asyn
 
   console.log(`Attempting to query database for user: ${Username}`);
 
-  try { // Wrap the database operation and subsequent logic in a try-catch
+  try {
     const [results] = await pool.query('SELECT * FROM Users WHERE Username = ?', [Username]);
-    // Note: When using pool.promise().query(), results is typically the first element of the array returned.
-    // For SELECT, it's an array of rows. For INSERT/UPDATE, it's an OkPacket.
 
     console.log("Query results:", results);
 
-    if (!results || results.length === 0) { // Check if results array is empty or undefined
+    if (!results || results.length === 0) {
       console.log("No user found with the provided username:", Username);
       return res.status(401).json({ message: 'Invalid credentials - user not found.' });
     }
@@ -281,7 +279,6 @@ app.post('/api/login', async (req, res) => { // Make the main route handler asyn
 
     const isPasswordValid = await bcrypt.compare(Password, user.Password);
     console.log("Password valid for user", Username, ":", isPasswordValid);
-    console.log
 
     if (!isPasswordValid) {
       console.log("Password comparison failed for user:", Username);
@@ -291,15 +288,22 @@ app.post('/api/login', async (req, res) => { // Make the main route handler asyn
     const token = jwt.sign({ userId: user.ID_User }, secretKey, { expiresIn: '1h' });
     console.log("Token generated for user", Username, ":", token);
 
-    res.json({ success: true, username: user.Username, token, userId : user.ID_User });
+    res.json({
+      success: true,
+      username: user.Username,
+      role: user.Role_User,
+      token,
+      userId: user.ID_User
+    });
 
   } catch (error) {
-    console.error("Error during login processing (database or other):", error); // More generic error log
+    console.error("Error during login processing (database or other):", error);
     if (!res.headersSent) {
       res.status(500).json({ message: 'Server error during login processing. Please check server logs.' });
     }
   }
 });
+
 
 app.post('/api/profile/change-password', async (req, res) => {
   const { username, currentPassword, newPassword } = req.body;
@@ -594,15 +598,19 @@ app.post('/api/games/clicked', (req, res) => {
 
 // Get Games Endpoint
 app.get('/api/user/:userId/games/clicked', async (req, res) => {
-  const {userId} = req.body;
+  const { userId } = req.params;
   try {
-const [games_clicked] = await pool.query('SELECT * FROM click_on c JOIN Games g ON (c.ID_Game=g.ID_Game an g.ID_User=?) WHERE c.ID_User = ?, [userId]');
-  res.json(games);
+    const [games_clicked] = await pool.query(
+      'SELECT * FROM click_on c JOIN Games g ON c.ID_Game = g.ID_Game WHERE c.ID_User = ? ORDER BY c.Date_click DESC',
+      [userId]
+    );
+    res.json(games_clicked);
   } catch (error) {
     console.error("Error fetching games:", error);
     res.status(500).json({ message: "Error fetching games" });
   }
 });
+
 
 // Like / Unlike a game
 
