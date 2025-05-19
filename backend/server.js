@@ -525,6 +525,58 @@ const [games_clicked] = await pool.query('SELECT * FROM click_on c JOIN Games g 
   }
 });
 
+// Like / Unlike a game
+app.post('/api/games/:gameId/like', verifyToken, async (req, res) => {
+  const userId = req.user.userId;
+  const gameId = parseInt(req.params.gameId, 10);
+
+  try {
+    const [[{ count }]] = await pool.query(
+      'SELECT COUNT(*) AS count FROM like_a WHERE ID_User = ? AND ID_Game = ?',
+      [userId, gameId]
+    );
+
+    if (count > 0) {
+      await pool.query(
+        'DELETE FROM like_a WHERE ID_User = ? AND ID_Game = ?',
+        [userId, gameId]
+      );
+      return res.json({ liked: false });
+    } else {
+      await pool.query(
+        'INSERT INTO like_a (ID_User, ID_Game) VALUES (?, ?)',
+        [userId, gameId]
+      );
+      return res.status(201).json({ liked: true });
+    }
+  } catch (err) {
+    console.error('Error toggling like:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Get User Likes
+app.get('/api/users/me/likes', verifyToken, async (req, res) => {
+  const userId = req.user.userId;
+
+  try {
+    const [rows] = await pool.query(
+      `SELECT g.ID_Game, g.Name_Game, g.Thumbnail_Game
+       FROM like_a l
+       JOIN Games g ON l.ID_Game = g.ID_Game
+       WHERE l.ID_User = ?`,
+      [userId]
+    );
+    // On renvoie un tableau d’IDs, ou d’objets selon ton front
+    const likedGameIds = rows.map(r => r.ID_Game);
+    res.json({ likedGameIds, details: rows });
+  } catch (err) {
+    console.error('Error fetching likes:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+
 // Launch the Server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

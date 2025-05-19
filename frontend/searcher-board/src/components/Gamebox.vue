@@ -2,13 +2,13 @@
   <router-link :to="{ name: 'SingleGame', params: { id: gameId } }" class="game-box-link">
     <div class="game-box" @click="clicked_game">
       <div class="game">
-        <img :src="poster" alt="Game Poster" class="poster" :class="{ 'active-border': isFavorite }" />
+        <img :src="poster" alt="Game Poster" class="poster" :class="{ 'active-border': likedState }" />
         <div
           class="popup-star"
           :class="{ 'active-star': star === '⭐' }"
-          @click="handleLike"
+          @click.stop.prevent="handleLike"
         >
-          {{ star }}
+          {{ starState }}
         </div>
         <p :class="['game-title', isLongTitle ? 'multi-line' : 'single-line']">{{ title }}</p>
         <p class="game-description">{{ description }}</p>
@@ -28,9 +28,38 @@ export default {
     isFavorite: { type: Boolean, default: false },
     star: { type: String, default: '☆' },
   },
+  data() {
+    return {
+      likedState: this.isFavorite,
+      starState: this.star
+    };
+  },
   computed: {
     isLongTitle() {
       return this.title.length > 25;
+    }
+  },
+  async created() {
+    // Fetch the user's liked games on component creation
+    const userData = localStorage.getItem('user');
+    if (!userData) return;
+    const { token } = JSON.parse(userData);
+    if (!token) return;
+    try {
+      const response = await fetch('http://localhost:3001/api/users/me/likes', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('API error:', text);
+        return;
+      }
+      const data = await response.json();
+      const likedIds = data.likedGameIds || [];
+      this.likedState = likedIds.includes(Number(this.gameId));
+      this.starState = this.likedState ? '⭐' : '☆';
+    } catch (error) {
+      console.error('Error fetching user likes:', error);
     }
   },
   methods: {
@@ -55,6 +84,39 @@ export default {
         console.error("Error recording click:", error);
       }
     },
+    async handleLike(event) {
+      // Prevent the click from bubbling to clicked_game
+      event.stopPropagation();
+      const userData = localStorage.getItem('user');
+      if (!userData) {
+        alert('Please log in for liking games');
+        return;
+      }
+      const { token } = JSON.parse(userData);
+      if (!token) {
+        alert('Please log in for liking games');
+        return;
+      }
+      try {
+        const method = this.likedState ? 'DELETE' : 'POST';
+        const response = await fetch({
+          method,
+          url: `http://localhost:3001/api/games/${this.gameId}/like`,
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          console.error('API error:', text);
+          return;
+        }
+        const data = await response.json();
+        const { liked } = data.liked;
+        this.likedState = liked;
+        this.starState = liked ? '⭐' : '☆';
+      } catch (error) {
+        console.error('Error toggling like:', error);
+      }
+    }
   },
 };
 </script>
@@ -147,12 +209,8 @@ export default {
 }
 
 .popup-star{
-  display: none;
-  transition: 0.5s ease;
-}
-
-.game:hover .popup-star {
   display: block;
+  transition: 0.5s ease;
   position: absolute;
   top: 10px;
   right: 10px;
