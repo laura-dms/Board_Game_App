@@ -44,12 +44,14 @@
       <div v-if="recommendedGames.length > 0" class="results-section">
         <h3>Meilleures Recommandations :</h3>
         <div class="recommended-games-grid">
-          <div v-for="game in recommendedGames" :key="game.id" class="recommended-game-card">
-            <img v-if="game.Thumbnail_Game || game.poster" :src="game.Thumbnail_Game || game.poster" :alt="game.Name_Game || game.title" class="game-thumbnail"/>
-            <h4>{{ game.Name_Game || game.title }}</h4>
-            <p><strong>Score :</strong> {{ game.score }}/100</p>
-            <p class="game-description">{{ game.Description_Game || game.description }}</p>
-          </div>
+          <Gamebox
+            v-for="game in recommendedGames"
+            :key="game.id"
+            :game-id="game.id"
+            :title="game.title"
+            :poster="game.poster"
+            :description="game.description"
+          />
         </div>
       </div>
       <div v-if="searchPerformed && recommendedGames.length === 0 && !isLoading" class="no-results">
@@ -63,6 +65,7 @@
 import { ref, onMounted } from 'vue';
 
 import axios from 'axios'; // Importez axios
+import Gamebox from './Gamebox.vue'; // Import Gamebox component
 
 // Définition des critères initiaux
 const criteria = ref([
@@ -182,13 +185,11 @@ const fetchRecommendations = async () => {
   try {
     const games = await submitCriteriaForRecommendations(activeCriteria);
     recommendedGames.value = games.map(game => ({
-        ...game,
-        // Assurer la présence des champs attendus par le template, avec des valeurs par défaut
         id: game.ID_Game || game.id,
-        Name_Game: game.Name_Game || game.title || "Jeu Inconnu",
+        title: game.Name_Game || game.title || "Jeu Inconnu",
+        poster: game.Thumbnail_Game || game.poster || "https://via.placeholder.com/100x150?text=Pas+d'image",
+        description: game.Description_Game || game.description || "Aucune description disponible.",
         score: game.score !== undefined ? game.score : "N/A",
-        Thumbnail_Game: game.Thumbnail_Game || game.poster || "https://via.placeholder.com/100x150?text=Pas+d'image",
-        Description_Game: game.Description_Game || game.description || "Aucune description disponible."
     })).slice(0, 3); // S'assurer qu'on ne prend que les 3 meilleurs
   } catch (error) {
     console.error("Erreur lors de la récupération des recommandations:", error);
@@ -344,7 +345,7 @@ updateOrder();
 
 .recommended-games-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Responsive grid */
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Adjust minmax as needed for Gamebox size */
   gap: 20px;
 }
 

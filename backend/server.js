@@ -538,8 +538,37 @@ app.get('/recommendations/:username', async (req, res) => {
   }
 });
 
+// Get User Activity (Clicked and Liked Games)
+app.get('/api/user/:userId/activity', async (req, res) => {
+  const { userId } = req.params;
 
+  if (!userId) {
+    return res.status(400).json({ message: "User ID is required." });
+  }
 
+  try {
+    // Modified query to only fetch liked games
+    const query = `
+      SELECT
+          'Like' AS ActivityType, -- Keep ActivityType for consistency if frontend expects it
+          g.ID_Game AS GameID,
+          g.Name_Game AS GameName,
+          g.Description_Game AS GameDescription,
+          g.Thumbnail_Game AS GameThumbnail,
+          la.Date_like AS ActivityDate
+      FROM like_a la
+      JOIN Games g ON la.ID_Game = g.ID_Game
+      WHERE la.ID_User = ?
+      ORDER BY ActivityDate DESC;
+    `;
+
+    const [activities] = await pool.query(query, [userId]);
+    res.json(activities);
+  } catch (error) {
+    console.error("Error fetching user liked games:", error); // Updated error message
+    res.status(500).json({ message: "Error fetching user liked games" }); // Updated error message
+  }
+});
 
 // Fetch Games Function
 async function fetchGames() {
