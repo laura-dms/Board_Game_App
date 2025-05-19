@@ -313,7 +313,11 @@ app.post('/api/profile/change-password', async (req, res) => {
   }
 
   try {
-    const [users] = await pool.query('SELECT * FROM Users WHERE Username = ?', [username]);
+    // Lock the user row for update
+    const [users] = await connection.query(
+      'SELECT * FROM Users WHERE Username = ? FOR UPDATE',
+      [username]
+    );
 
     if (!users || users.length === 0) {
       return res.status(404).json({ message: 'User not found.' });
@@ -400,6 +404,7 @@ app.get('/api/games/:gameID', async (req, res) => {
     res.status(500).json({ message: 'Error fetching game details from server' });
   }
 });
+
 
 app.post('/api/likes', async (req, res) => {
   const { username, gameId } = req.body;
