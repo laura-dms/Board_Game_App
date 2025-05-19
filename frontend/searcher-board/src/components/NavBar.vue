@@ -7,8 +7,8 @@
       <li v-if="isUserLoggedIn"><router-link to="/GameRecommendationForm">Form</router-link></li>
       <li v-if="isUserLoggedIn"><router-link to="/find-game">Find Game</router-link></li>
       <li v-if="isUserLoggedIn"><router-link to="/history">History</router-link></li>
+      <li v-if="isUserLoggedIn && isuserAdmin"><router-link to="/admin">Admin Panel</router-link></li>
       <li v-if="isUserLoggedIn" @click="logout"><a href="#">Logout</a></li>
-      <li v-if="isUserLoggedIn && isuserAdmin"><router-link to="/consulted-games">Admin Panel</router-link></li>
     </ul>
     <div class="user-info" v-if="isUserLoggedIn">
       <router-link to="/profile">{{ username }}</router-link>
@@ -48,13 +48,10 @@ export default {
         
         const user = JSON.parse(userString);
       
-      if (user.admin == "Admin") {
-        try {
-          return JSON.parse(user).isAdmin || false;
-        } catch (e) {
-          console.error("Erreur de parsing du localStorage user:", e);
-          return false;
-        }
+      if (user.role == "Admin") {
+        return true;
+      } else if (user.admin == "User") {
+        return false;
       }
       return false;
     },

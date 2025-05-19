@@ -7,6 +7,7 @@ import GameRecommendationForm from './src/components/GameRecommendationForm.vue'
 import SingleGamePage from './src/components/SingleGamePage.vue'; // Import the new component
 import Profile from './src/components/Profile.vue'; // Import Profile component
 import History from './src/components/Consulted_Games.vue';
+import AdminPanel from './src/components/AdminPanel.vue'; // Import AdminPanel component
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -17,6 +18,7 @@ const routes = [
   { path: '/game/:id', name: 'SingleGame', component: SingleGamePage, props: true }, // Add new route for single game
   { path: '/profile', name: 'Profile', component: Profile },
   { path: '/history', name: 'History', component: History},
+  { path: '/admin', name: 'AdminPanel', component: AdminPanel }, // Add route for AdminPanel
 ];
 
 const router = createRouter({

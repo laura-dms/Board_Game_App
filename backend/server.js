@@ -696,6 +696,46 @@ app.get('/api/users/me/likes', verifyToken, async (req, res) => {
 });
 
 
+app.get('/api/users', async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT ID_User, Username, Role_User FROM Users'
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Erreur lors de la récupération des utilisateurs:', err);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+
+app.get('/api/games', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM Games');
+    res.json(rows);
+  } catch (err) {
+    console.error('Erreur lors de la récupération des jeux :', err);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+
+app.delete('/api/users/:id', async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const [result] = await pool.query('DELETE FROM Users WHERE ID_User = ?', [userId]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+    res.json({ success: true, message: 'Utilisateur supprimé avec succès' });
+  } catch (err) {
+    console.error('Erreur lors de la suppression de l\'utilisateur:', err);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+
+
 // Launch the Server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
