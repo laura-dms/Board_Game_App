@@ -245,8 +245,6 @@ app.post('/register', async (req, res) => {
   }
 });
 
-
-
 app.post('/api/login', async (req, res) => {
   console.log("Login request received:", req.body);
 
@@ -288,13 +286,14 @@ app.post('/api/login', async (req, res) => {
     const token = jwt.sign({ userId: user.ID_User }, secretKey, { expiresIn: '1h' });
     console.log("Token generated for user", Username, ":", token);
 
-    res.json({
-      success: true,
-      username: user.Username,
-      role: user.Role_User,
-      token,
-      userId: user.ID_User
+    res.json({ 
+      success: true, 
+      username: user.Username, 
+      token, 
+      userId: user.ID_User, 
+      role: user.Role_User  // Ajout du rôle
     });
+
 
   } catch (error) {
     console.error("Error during login processing (database or other):", error);
@@ -314,7 +313,7 @@ app.post('/api/profile/change-password', async (req, res) => {
 
   try {
     // Lock the user row for update
-    const [users] = await connection.query(
+    const [users] = await pool.query(
       'SELECT * FROM Users WHERE Username = ? FOR UPDATE',
       [username]
     );

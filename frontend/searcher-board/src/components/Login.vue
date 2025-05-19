@@ -77,11 +77,13 @@ export default {
 
           // --- CORRECTED LINE ---
           // Store an object containing username and token, stringified
-          localStorage.setItem("user", JSON.stringify({
+          const userData = {
             username: response.data.username,
             token: response.data.token,
-            userId : response.data.userId
-          }));
+            userId: response.data.userId,
+            role: response.data.role,
+          };
+          localStorage.setItem('user', JSON.stringify(userData));
           // --- END CORRECTED LINE ---
 
           alert("Login successful! Redirecting to Find Game...");

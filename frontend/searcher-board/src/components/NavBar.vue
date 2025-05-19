@@ -47,16 +47,8 @@ export default {
         }
         
         const user = JSON.parse(userString);
-        
-        if (!user.userId) {
-          this.error = "User ID undefined";
-          this.isLoading = false;
-          return;
-        }
-
-
-
-      if (user.isAdmin) {
+      
+      if (user.admin == "Admin") {
         try {
           return JSON.parse(user).isAdmin || false;
         } catch (e) {
