@@ -210,7 +210,7 @@ export default {
 }
 
 .game:hover .popup-star:hover {
-  color: gold;
+  color: var(--thedarkone);
   transform: scale(1.5);
 }
 
