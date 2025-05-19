@@ -2,13 +2,13 @@
   <router-link :to="{ name: 'SingleGame', params: { id: gameId } }" class="game-box-link">
     <div class="game-box" @click="clicked_game">
       <div class="game">
-        <img :src="poster" alt="Game Poster" class="poster" :class="{ 'active-border': isFavorite }" />
+        <img :src="poster" alt="Game Poster" class="poster" :class="{ 'active-border': likedState }" />
         <div
           class="popup-star"
-          :class="{ 'active-star': star === '⭐' }"
-          @click="handleLike"
+          :class="{ 'active-star': likedState }"
+          @click.stop.prevent="toggleLike"
         >
-          {{ star }}
+          {{ likedState ? '⭐' : '☆' }}
         </div>
         <p :class="['game-title', isLongTitle ? 'multi-line' : 'single-line']">{{ title }}</p>
         <p class="game-description">{{ description }}</p>
@@ -18,46 +18,94 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'GameBox',
   props: {
     gameId: { type: [String, Number], required: true },
     title: { type: String, default: 'Game Title' },
     poster: { type: String, default: 'https://placehold.co/600x400' },
-    description: { type: String, default: 'Game Description' },
-    isFavorite: { type: Boolean, default: false },
-    star: { type: String, default: '☆' },
+    description: { type: String, default: 'Game Description' }
+  },
+  data() {
+    return {
+      likedState: false
+    };
   },
   computed: {
     isLongTitle() {
       return this.title.length > 25;
     }
   },
+  async mounted() {
+    await this.fetchUserLikes();
+  },
   methods: {
-    async clicked_game() {
-      console.log("Test");
-      // Add click to the database
+    async fetchUserLikes() {
+      const userData = localStorage.getItem('user');
+      if (!userData) return;
+      const { userId } = JSON.parse(userData);
+      if (!userId) return;
+
       try {
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-          console.warn("User ID is not available.  Cannot record click.");
-          return;
-        }
-
-        await this.executeQuery(`
-          INSERT INTO click_on (ID_User, ID_Game, Date_click)
-          VALUES (?, ?, NOW())
-        `, [userId, this.gameId]); 
-
-        console.log("Click recorded in database.");
-
+        const response = await axios.get(`http://localhost:3001/api/users/${userId}/likes`);
+        const likedIds = response.data.likedGameIds || [];
+        this.likedState = likedIds.includes(Number(this.gameId));
       } catch (error) {
-        console.error("Error recording click:", error);
+        console.error('Erreur lors de la récupération des jeux likés :', error);
       }
     },
-  },
+
+    async toggleLike() {
+      const userData = localStorage.getItem('user');
+      if (!userData) {
+        alert('Merci de vous connecter pour liker un jeu.');
+        return;
+      }
+      const { userId } = JSON.parse(userData);
+      if (!userId) {
+        alert('Merci de vous connecter pour liker un jeu.');
+        return;
+      }
+
+      const method = this.likedState ? 'delete' : 'post';
+
+      try {
+        if (method === 'post') {
+          await axios.post(`http://localhost:3001/api/games/${this.gameId}/like`, {
+            userId
+          });
+        } else {
+          await axios.delete(`http://localhost:3001/api/games/${this.gameId}/like`, {
+            data: { userId }
+          });
+        }
+        this.likedState = !this.likedState;
+      } catch (error) {
+        console.error("Erreur lors du like/unlike du jeu :", error);
+      }
+    },
+
+    async clicked_game() {
+      const userData = localStorage.getItem('user');
+      if (!userData) return;
+      const { userId } = JSON.parse(userData);
+      if (!userId) return;
+
+      try {
+        await axios.post(`http://localhost:3001/api/games/clicked`, {
+          userId,
+          gameId: this.gameId
+        });
+      } catch (error) {
+        console.error("Erreur lors de l'enregistrement du clic :", error);
+      }
+    }
+  }
 };
 </script>
+
 
 <style scoped>
 .game-box-link {
@@ -147,12 +195,8 @@ export default {
 }
 
 .popup-star{
-  display: none;
-  transition: 0.5s ease;
-}
-
-.game:hover .popup-star {
   display: block;
+  transition: 0.5s ease;
   position: absolute;
   top: 10px;
   right: 10px;

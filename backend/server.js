@@ -6,21 +6,31 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import path from 'path'; // Import the 'path' module
+import { fileURLToPath } from 'url'; // Import fileURLToPath
 import { initializeDatabase } from './database.js';
+
+// Determine the directory of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env file from the same directory as server.js
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const port = 3001; // Backend server port
 const secretKey = crypto.randomBytes(64).toString('hex');
 
-dotenv.config();
-
 // MySQL Database Connection
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
-  user: process.env.DB_USER,
+  user: process.env.DB_USER, // Ensure you are using process.env.DB_USER here
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
+  port: process.env.DB_PORT || 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 }).promise();
 
 console.log("Connecté avec succès à la base de données MySQL.");
@@ -566,6 +576,27 @@ async function fetchGamesbyId(userId) { //  Added userId parameter
   }
 }
 
+
+
+app.post('/api/games/clicked', (req, res) => {
+  const { userId, gameId } = req.body;
+
+  if (!userId || !gameId) {
+    return res.status(400).json({ error: 'Les champs userId et gameId sont requis.' });
+  }
+
+  const query = 'INSERT INTO click_on (ID_User, ID_Game, Date_click) VALUES (?, ?, NOW())';
+  pool.query(query, [userId, gameId], (error, results) => {
+    if (error) {
+      console.error('Erreur lors de l\'enregistrement du clic :', error);
+      return res.status(500).json({ error: 'Erreur serveur lors de l\'enregistrement du clic.' });
+    }
+    res.status(201).json({ message: 'Clic enregistré avec succès.' });
+  });
+});
+
+
+
 // Get Games Endpoint
 app.get('/api/user/:userId/games/clicked', async (req, res) => {
   const {userId} = req.body;
@@ -577,6 +608,86 @@ const [games_clicked] = await pool.query('SELECT * FROM click_on c JOIN Games g 
     res.status(500).json({ message: "Error fetching games" });
   }
 });
+
+// Like / Unlike a game
+
+// Ajouter un like
+app.post('/api/games/:gameId/like', async (req, res) => {
+  const userId = req.body.userId; // fourni dans le corps de la requête
+  const gameId = parseInt(req.params.gameId, 10);
+
+  try {
+    await pool.query(
+      'INSERT INTO like_a (ID_User, ID_Game, Date_like) VALUES (?, ?, NOW())',
+      [userId, gameId]
+    );
+    res.json({ liked: true });
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') {
+      return res.status(409).send('Déjà liké');
+    }
+    console.error(err);
+    res.status(500).send('Erreur serveur');
+  }
+});
+
+// Récupérer les jeux likés d’un utilisateur
+app.get('/api/users/:userId/likes', async (req, res) => {
+  const userId = parseInt(req.params.userId, 10);
+
+  try {
+    const [rows] = await pool.query(
+      'SELECT ID_Game FROM like_a WHERE ID_User = ?',
+      [userId]
+    );
+
+    const likedGameIds = rows.map(row => row.ID_Game);
+    res.json({ likedGameIds });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur serveur');
+  }
+});
+
+// Supprimer un like
+app.delete('/api/games/:gameId/like', async (req, res) => {
+  const userId = req.body.userId; // fourni dans le corps de la requête
+  const gameId = parseInt(req.params.gameId, 10);
+
+  try {
+    await pool.query(
+      'DELETE FROM like_a WHERE ID_User = ? AND ID_Game = ?',
+      [userId, gameId]
+    );
+    res.json({ liked: false });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur serveur');
+  }
+});
+
+
+// Get User Likes
+app.get('/api/users/me/likes', verifyToken, async (req, res) => {
+  const userId = req.user.userId;
+
+  try {
+    const [rows] = await pool.query(
+      `SELECT g.ID_Game, g.Name_Game, g.Thumbnail_Game
+       FROM like_a l
+       JOIN Games g ON l.ID_Game = g.ID_Game
+       WHERE l.ID_User = ?`,
+      [userId]
+    );
+    // On renvoie un tableau d’IDs, ou d’objets selon ton front
+    const likedGameIds = rows.map(r => r.ID_Game);
+    res.json({ likedGameIds, details: rows });
+  } catch (err) {
+    console.error('Error fetching likes:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 
 // Launch the Server
 app.listen(port, () => {

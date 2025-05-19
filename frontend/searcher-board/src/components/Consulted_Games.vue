@@ -5,51 +5,62 @@
       </div>
       <div v-else id="gamebox" class="game-grid">
         <Gamebox
-          v-for="game in click_on_games" 
-          :key="game.id"
-          :title="game.title"
-          :poster="game.poster"
-          :description="game.description"
-          :rating="game.rating"
-          :longdescription="game.longdescription"
-        /> <!-- display all the games -->
+  v-for="game in games" 
+  :key="game.ID_Game"
+  :gameId="game.ID_Game"
+  :title="game.Title"
+  :poster="game.Poster"
+  :description="game.Description"
+/>
+ <!-- display all the games -->
       </div>
     </div>
   </template>
   
-  <script>
-  import Gamebox from './Gamebox.vue';
-  
-  export default {
-    name: 'game_consulted',
-    components: {
-      Gamebox,
-    },
-    data() {
+<script>
+import Gamebox from './Gamebox.vue';
+import axios from 'axios'; // Import axios for making HTTP requests
+
+export default {
+  name: 'game_consulted',
+  components: {
+    Gamebox,
+  },
+  data() {
     return {
       games: [],
-      loading: true, // Add a loading state
-      error: null,     // Add an error state
+      loading: true,
+      error: null,
     };
+  },
+  props: {
+    userId: {
+      type: Number, // Ou Number, selon le type de ton userId
+      required: true, // Indique que cette prop est obligatoire
     },
-    props: {
-      userId: "",
-    },
-    async mounted() {
-        try {
-        // Fetch games clicked on by the user from your backend API
-        const response = await axios.get(`/api/user/${userId = localStorage.getItem("userId")}/games/clicked`); // 
-        this.games = response.data;
-        } catch (error) {
-        this.error = error.message; // Store the error message
-        console.error('Error fetching clicked games:', error);
-        } finally {
-        this.loading = false;
-        }
-    },
+  },
+  async mounted() {
+    try {
+      // Fetch games clicked on by the user from your backend API
+
+      const userData = localStorage.getItem('user');
+      if (!userData) return;
+      const { userId } = JSON.parse(userData);
+      if (!userId) return;
+    
+
+      const response = await axios.get(`/api/user/${this.userId}/games/clicked`);
+      this.games = response.data;
+    } catch (error) {
+      this.error = error.message;
+      console.error('Error fetching clicked games:', error);
+    } finally {
+      this.loading = false;
+    }
+  },
 };
 </script>
-  
+
   <style scoped>
   .game-grid {
     display: grid;
