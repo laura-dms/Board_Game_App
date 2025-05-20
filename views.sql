@@ -16,7 +16,7 @@ FROM Games
 ORDER BY YearPublished DESC;
 
 -- View: FamilyFriendlyGamesView
-CREATE VIEW FamilyFriendlyGamesView AS
+CREATE OR REPLACE VIEW FamilyFriendlyGamesView AS
 SELECT 
     ID_Game AS GameID,
     Name_Game AS GameName,
@@ -61,10 +61,11 @@ JOIN Mechanics m ON ha.ID_Mechanics = m.ID_Mechanics
 ORDER BY GameName ASC, Mechanic ASC;
 
 -- View: LongPlayingGamesView
-CREATE VIEW LongPlayingGamesView AS
+CREATE OR REPLACE VIEW LongPlayingGamesView AS
 SELECT 
     ID_Game AS GameID,
     Name_Game AS GameName,
+    Description_Game AS Description, -- Added this line
     Playing_time_Game AS PlayingTime,
     Year_published_Game AS YearPublished,
     Thumbnail_Game AS Thumbnail
