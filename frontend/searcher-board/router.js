@@ -6,7 +6,7 @@ import FindGame from './src/components/FindGame.vue';
 import GameRecommendationForm from './src/components/GameRecommendationForm.vue';
 import SingleGamePage from './src/components/SingleGamePage.vue'; // Import the new component
 import Profile from './src/components/Profile.vue'; // Import Profile component
-import History from './src/components/Consulted_Games.vue';
+import History from './src/components/LikedGames.vue';
 import AdminPanel from './src/components/AdminPanel.vue'; // Import AdminPanel component
 import ClickedGames from './src/components/ClickedGames.vue'; // Import ClickedGames component
 
