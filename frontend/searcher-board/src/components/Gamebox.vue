@@ -60,12 +60,12 @@ export default {
     async toggleLike() {
       const userData = localStorage.getItem('user');
       if (!userData) {
-        alert('Merci de vous connecter pour liker un jeu.');
+        alert('please log in to like a game');
         return;
       }
       const { userId } = JSON.parse(userData);
       if (!userId) {
-        alert('Merci de vous connecter pour liker un jeu.');
+        alert('please log in to like a game');
         return;
       }
 

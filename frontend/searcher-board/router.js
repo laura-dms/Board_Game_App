@@ -8,6 +8,7 @@ import SingleGamePage from './src/components/SingleGamePage.vue'; // Import the 
 import Profile from './src/components/Profile.vue'; // Import Profile component
 import History from './src/components/Consulted_Games.vue';
 import AdminPanel from './src/components/AdminPanel.vue'; // Import AdminPanel component
+import ClickedGames from './src/components/ClickedGames.vue'; // Import ClickedGames component
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -19,6 +20,7 @@ const routes = [
   { path: '/profile', name: 'Profile', component: Profile },
   { path: '/history', name: 'History', component: History},
   { path: '/admin', name: 'AdminPanel', component: AdminPanel }, // Add route for AdminPanel
+  { path: '/clicked-games', name: 'ClickedGames', component: ClickedGames }, // Add route for ClickedGames
 ];
 
 const router = createRouter({
