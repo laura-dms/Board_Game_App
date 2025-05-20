@@ -90,7 +90,7 @@ app.get('/api/games/long-playing', async (req, res) => {
     try {
         // Fetches from LongPlayingGamesView, limited to 4 for home page display
         // Updated query to include Description
-        const [games] = await pool.query("SELECT GameID, GameName, Description, Thumbnail FROM LongPlayingGamesView LIMIT 4");
+        const [games] = await pool.query("SELECT GameID, GameName, Thumbnail FROM LongPlayingGamesView LIMIT 4");
         const formattedGames = games.map(game => ({
             id: game.GameID,
             title: game.GameName,
