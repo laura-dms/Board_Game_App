@@ -21,6 +21,27 @@
     <!-- All Games Section with Search -->
     <div class="game-category-section">
       <h2>All Games</h2>
+    <!-- Section for Family Friendly Games -->
+    <div v-if="familyFriendlyGames.length > 0" class="game-category-section">
+      <h2>Family Friendly Games</h2>
+      <GamePage :games="familyFriendlyGames" />
+    </div>
+    <div v-if="isLoadingFamilyFriendly" class="loading-message"><p>Loading family friendly games...</p></div>
+    <div v-if="!isLoadingFamilyFriendly && errorFamilyFriendly" class="error-message"><p>Could not load family friendly games: {{ errorFamilyFriendly }}</p></div>
+    <hr v-if="familyFriendlyGames.length > 0" />
+
+    <!-- Section for Long Playing Games -->
+    <div v-if="longPlayingGames.length > 0" class="game-category-section">
+      <h2>Long Playing Games</h2>
+      <GamePage :games="longPlayingGames" />
+    </div>
+    <div v-if="isLoadingLongPlaying" class="loading-message"><p>Loading long playing games...</p></div>
+    <div v-if="!isLoadingLongPlaying && errorLongPlaying" class="error-message"><p>Could not load long playing games: {{ errorLongPlaying }}</p></div>
+    <hr v-if="longPlayingGames.length > 0" />
+
+    <!-- All Games Section with Search -->
+    <div class="game-category-section">
+      <h2>All Games</h2>
       <ResearchBar @search="handleSearch" />
       <div v-if="isLoadingAllGames" class="loading-message"><p>Loading all games...</p></div>
       <div v-if="!isLoadingAllGames && errorAllGames" class="error-message"><p>{{ errorAllGames }}</p></div>
@@ -152,4 +173,7 @@ hr {
 }
 /* The .game-grid style that was here is not directly used by Home.vue's template elements.
    GamePage.vue has its own .game-grid styling. */
+/* The .game-grid style that was here is not directly used by Home.vue's template elements.
+   GamePage.vue has its own .game-grid styling. */
 </style>
+

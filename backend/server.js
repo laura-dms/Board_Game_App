@@ -67,6 +67,43 @@ app.get('/api/mechanics', async (req, res) => {
     }
 });
 
+// New Endpoint for Family Friendly Games
+app.get('/api/games/family-friendly', async (req, res) => {
+    try {
+        // Fetches from FamilyFriendlyGamesView, limited to 4 for home page display
+        const [games] = await pool.query("SELECT GameID, GameName, Description, Thumbnail FROM FamilyFriendlyGamesView LIMIT 4");
+        const formattedGames = games.map(game => ({
+            id: game.GameID,
+            title: game.GameName,
+            poster: game.Thumbnail,
+            description: game.Description || "No description available."
+        }));
+        res.json(formattedGames);
+    } catch (error) {
+        console.error("Erreur lors de la récupération des jeux familiaux:", error);
+        res.status(500).json({ error: 'Impossible de récupérer les jeux familiaux' });
+    }
+});
+
+// New Endpoint for Long Playing Games
+app.get('/api/games/long-playing', async (req, res) => {
+    try {
+        // Fetches from LongPlayingGamesView, limited to 4 for home page display
+        // Updated query to include Description
+        const [games] = await pool.query("SELECT GameID, GameName, Description, Thumbnail FROM LongPlayingGamesView LIMIT 4");
+        const formattedGames = games.map(game => ({
+            id: game.GameID,
+            title: game.GameName,
+            poster: game.Thumbnail,
+            description: game.Description || "No description available." // Use the fetched Description
+        }));
+        res.json(formattedGames);
+    } catch (error) {
+        console.error("Erreur lors de la récupération des jeux longs:", error);
+        res.status(500).json({ error: 'Impossible de récupérer les jeux longs' });
+    }
+});
+
 // Endpoint pour obtenir des recommandations de jeux
 app.post('/api/recommendations', async (req, res) => {
     const { criteria: userCriteria } = req.body;
@@ -124,10 +161,10 @@ app.post('/api/recommendations', async (req, res) => {
                         if (gameMechs.has(parseInt(critValue))) match = true;
                         break;
                     case 'minPlayers':
-                        if (game.Min_players_Game >= parseInt(critValue)) match = true;
+                        if (game.Min_players_Game == parseInt(critValue)) match = true;
                         break;
                     case 'maxPlayers':
-                        if (game.Max_players_Game <= parseInt(critValue)) match = true;
+                        if (game.Max_players_Game == parseInt(critValue)) match = true;
                         break;
                     case 'minAge':
                         if (game.Min_age_Game <= parseInt(critValue)) match = true;
