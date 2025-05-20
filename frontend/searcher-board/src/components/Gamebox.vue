@@ -10,8 +10,8 @@
         >
           {{ likedState ? '⭐' : '☆' }}
         </div>
-        <p :class="['game-title', isLongTitle ? 'multi-line' : 'single-line']">{{ title }}</p>
         <p class="game-description">{{ description }}</p>
+        <p :class="['game-title', isLongTitle ? 'multi-line' : 'single-line', { 'gold-background': likedState }]">{{ title }}</p>
       </div>
     </div>
   </router-link>
@@ -134,32 +134,38 @@ export default {
   display: block;
   margin: 0 auto;
   transition: opacity 0.5s ease;
-  border-radius: 10px;
-  border: 3px solid black;
+  border-radius: 15px /*15px 0px 0px*/;
+  border: 3px solid var(--thedarkdevil);
 }
 
 .game-title {
   position: absolute;
-  top: 80%;
+  top: -5%;
   left: 50%;
   transform: translate(-50%);
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--thedarkdevil);
   color: white;
   padding: 10px;
+  padding-top: 151.8%;
   width: 90%;
   text-align: center;
-  z-index: 1;
+  z-index: -1;
   transition: opacity 0.5s ease;
+}
+
+.game-title.gold-background {
+  background-color: gold;
+  color: var(--thedarkdevil);
 }
 
 .single-line {
   transform: translate(-50%); /* special case for short game title */
-  border-radius: 10px;
+  border-radius: 15px;
 }
 
 .multi-line {
   transform: translate(-50%, -35%); /* special case for long game title */
-  border-radius: 10px;
+  border-radius: 15px;
 }
 
 .game-description {
@@ -201,7 +207,7 @@ export default {
   top: 10px;
   right: 10px;
   font-size: 36px;
-  color: white;
+  color: var(--thedarkdevil);
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   cursor: pointer;
   z-index: 2;
@@ -210,7 +216,7 @@ export default {
 }
 
 .game:hover .popup-star:hover {
-  color: gold;
+  color: var(--thedarkone);
   transform: scale(1.5);
 }
 

@@ -44,14 +44,15 @@
       <div v-if="recommendedGames.length > 0" class="results-section">
         <h3>Meilleures Recommandations :</h3>
         <div class="recommended-games-grid">
-          <Gamebox
-            v-for="game in recommendedGames"
-            :key="game.id"
-            :game-id="game.id"
-            :title="game.title"
-            :poster="game.poster"
-            :description="game.description"
-          />
+          <div v-for="game in recommendedGames" :key="game.id" class="recommendation-item-with-score">
+            <Gamebox
+              :game-id="game.id"
+              :title="game.title"
+              :poster="game.poster"
+              :description="game.description"
+            />
+            <p class="recommendation-score">Score: {{ game.score !== undefined ? game.score + '%' : 'N/A' }}</p>
+          </div>
         </div>
       </div>
       <div v-if="searchPerformed && recommendedGames.length === 0 && !isLoading" class="no-results">
@@ -349,6 +350,19 @@ updateOrder();
   gap: 20px;
 }
 
+.recommendation-item-with-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centers Gamebox and score text */
+}
+
+.recommendation-score {
+  margin-top: 8px; /* Space between Gamebox and score */
+  font-size: 0.9em;
+  font-weight: bold;
+  color: #333;
+}
+
 .recommended-game-card {
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -401,3 +415,4 @@ updateOrder();
   border-radius: 4px;
 }
 </style>
+``` 

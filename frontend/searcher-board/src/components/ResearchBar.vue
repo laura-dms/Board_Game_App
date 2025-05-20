@@ -46,13 +46,13 @@
   
   input:focus {
     outline: none;
-    border-color: #017bff;
+    border-color: var(--thedarkone);
   }
   
   button {
     margin-left: 10px;
     padding: 10px;
-    background-color: #017bff;
+    background-color: var(--thedarkone);
     color: white;
     border: none;
     border-radius: 5px;
@@ -61,7 +61,7 @@
   }
   
   button:hover {
-    background-color: #0056b3;
+    background-color: var(--thedarkdevil);
   }
   </style>
   

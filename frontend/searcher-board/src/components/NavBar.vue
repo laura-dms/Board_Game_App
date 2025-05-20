@@ -1,7 +1,7 @@
 <template>
   <nav class="navbar">
     <ul class="nav-links">
-      <li><router-link to="/">Home</router-link></li>
+      <li><router-link to="/"><img src="../../assets/Logo_SearcherBoard.svg" alt="Logo of the Website"></router-link></li>&emsp;&emsp;
       <li v-if="!isUserLoggedIn"><router-link to="/login">Login</router-link></li>
       <li v-if="!isUserLoggedIn"><router-link to="/register">Register</router-link></li>
       <li v-if="isUserLoggedIn"><router-link to="/GameRecommendationForm">Form</router-link></li>
@@ -67,9 +67,21 @@ export default {
 </script>
 
 <style scoped>
+img{
+  position: absolute;
+  width: 3%;
+  height: auto;
+  translate: -17% -25%;
+  transition: all 0.3s ease;
+}
+
+img:hover {
+  transform: scale(1.1);
+}
+
 .navbar {
-  background-color: #017bff;
-  padding: 10px 20px;
+  background-color: var(--primary);
+  padding: 15px 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
